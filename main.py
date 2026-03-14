@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 # MongoDB Atlas 연결
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://moojuk87_db_user:PacZELc5EcSHKvU1@cluster0.rfozbtk.mongodb.net/?appName=Cluster0")
+MONGO_URL = os.environ.get("MONGO_URL")
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.stays_db
 
