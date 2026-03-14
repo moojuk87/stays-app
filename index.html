@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STAYS — Property Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg:         #0d0f14;
+      --surface:    #13161e;
+      --surface2:   #181c27;
+      --border:     #1e2230;
+      --muted:      #2a2f42;
+      --text:       #e8e9ef;
+      --subtle:     #6b7194;
+      --accent:     #c9a96e;
+      --accent-dim: #8a6d3f;
+      --green:      #4ade80;
+      --red:        #f87171;
+      --blue:       #60a5fa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 128px 128px; opacity: .4;
+    }
+
+    .font-display { font-family: 'DM Serif Display', serif; }
+    .font-mono    { font-family: 'DM Mono', monospace; }
+
+    /* ══ LOGIN SCREEN ══ */
+    #login-screen {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+    }
+
+    .login-box {
+      text-align: center;
+      padding: 3rem 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      width: min(420px, 92vw);
+      animation: fadeUp .5s ease both;
+    }
+
+    .login-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 2.4rem; color: var(--accent);
+      letter-spacing: .06em; margin-bottom: .25rem;
+    }
+    .login-sub { color: var(--subtle); font-size: .85rem; margin-bottom: 2.5rem; }
+
+    .google-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .75rem;
+      width: 100%; padding: .85rem 1.5rem;
+      background: #fff; color: #1f1f1f;
+      border: none; border-radius: .75rem; cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: .95rem; font-weight: 500;
+      transition: box-shadow .2s, transform .15s;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    }
+    .google-btn:hover { box-shadow: 0 4px 20px rgba(0,0,0,.32); transform: translateY(-1px); }
+    .google-btn:active { transform: translateY(0); }
+    .google-logo { width: 20px; height: 20px; flex-shrink: 0; }
+
+    .login-notice {
+      margin-top: 1.2rem;
+      font-size: .72rem; color: var(--muted);
+      font-family: 'DM Mono', monospace; line-height: 1.6;
+    }
+
+    #client-id-notice {
+      margin-top: 1.5rem; padding: 1rem 1.25rem;
+      background: rgba(201,169,110,.07); border: 1px solid var(--accent-dim);
+      border-radius: .75rem; font-size: .73rem; color: var(--accent);
+      font-family: 'DM Mono', monospace; text-align: left; line-height: 1.8;
+    }
+    #client-id-notice code {
+      background: rgba(0,0,0,.3); padding: .1rem .4rem;
+      border-radius: .3rem; font-size: .68rem;
+    }
+    #client-id-notice a { color: var(--accent); text-decoration: underline; }
+
+    /* ══ APP SHELL ══ */
+    #app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 2.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,15,20,.88); backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 50;
+    }
+
+    .logo { font-family: 'DM Serif Display', serif; font-size: 1.35rem; letter-spacing: .06em; color: var(--accent); }
+    .logo span { color: var(--subtle); font-size: .78em; }
+
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+
+    nav { display: flex; gap: .25rem; background: var(--surface); border: 1px solid var(--border); border-radius: 9999px; padding: .25rem; }
+    .nav-btn {
+      font-family: 'DM Mono', monospace; font-size: .73rem; font-weight: 500;
+      letter-spacing: .06em; text-transform: uppercase;
+      padding: .4rem 1.2rem; border-radius: 9999px; border: none; cursor: pointer;
+      transition: all .22s; color: var(--subtle); background: transparent;
+    }
+    .nav-btn.active { background: var(--accent); color: var(--bg); }
+    .nav-btn:not(.active):hover { color: var(--text); }
+
+    .user-pill {
+      display: flex; align-items: center; gap: .6rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 9999px; padding: .3rem .3rem .3rem .75rem;
+    }
+    .user-name { font-size: .8rem; color: var(--subtle); max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .user-avatar { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--accent); }
+    .user-avatar-fallback {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--accent-dim); color: var(--accent);
+      font-family: 'DM Mono', monospace; font-size: .75rem; font-weight: 500;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--accent);
+    }
+    .logout-btn {
+      background: none; border: none; cursor: pointer; color: var(--subtle);
+      font-size: .75rem; padding: .2rem .5rem;
+      font-family: 'DM Mono', monospace; transition: color .2s;
+    }
+    .logout-btn:hover { color: var(--red); }
+
+    /* ══ MAIN ══ */
+    main { flex: 1; padding: 2.5rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(1.8rem, 3vw, 2.3rem);
+      line-height: 1.1; margin-bottom: .4rem;
+    }
+    .section-sub { color: var(--subtle); font-size: .85rem; margin-bottom: 2rem; }
+
+    /* ══ ADD PANEL ══ */
+    .add-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; overflow: hidden; margin-bottom: 2rem;
+    }
+    .add-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 1.5rem; border-bottom: 1px solid transparent;
+      cursor: pointer; transition: background .15s;
+    }
+    .add-panel-header:hover { background: var(--surface2); }
+    .add-panel-header.open { border-bottom-color: var(--border); }
+    .add-panel-title {
+      display: flex; align-items: center; gap: .7rem;
+      font-family: 'DM Mono', monospace; font-size: .82rem;
+      font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--accent);
+    }
+    .add-panel-body { padding: 1.5rem; display: none; }
+    .add-panel-body.open { display: block; }
+
+    .add-form { display: grid; grid-template-columns: 1fr 2fr auto; gap: .75rem; align-items: end; }
+
+    .field label {
+      display: block; font-family: 'DM Mono', monospace;
+      font-size: .68rem; text-transform: uppercase; letter-spacing: .1em;
+      color: var(--subtle); margin-bottom: .45rem;
+    }
+    .field input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: .6rem; padding: .7rem 1rem;
+      color: var(--text); font-family: 'DM Sans', sans-serif; font-size: .875rem;
+      outline: none; transition: border-color .2s;
+    }
+    .field input:focus { border-color: var(--accent); }
+    .field input::placeholder { color: var(--muted); }
+
+    .add-btn {
+      font-family: 'DM Mono', monospace; font-size: .75rem; font-weight: 500;
+      letter-spacing: .06em; text-transform: uppercase;
+      padding: .72rem 1.5rem; border-radius: .6rem; border: none;
+      background: var(--accent); color: var(--bg); cursor: pointer;
+      transition: opacity .2s, transform .15s; white-space: nowrap;
+    }
+    .add-btn:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
+    .add-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .ical-hint {
+      margin-top: 1rem; padding: .85rem 1rem;
+      background: rgba(96,165,250,.05); border: 1px solid rgba(96,165,250,.14);
+      border-radius: .6rem; font-family: 'DM Mono', monospace; font-size: .72rem;
+      color: var(--blue); line-height: 1.7;
+    }
+
+    /* ══ PROPERTY CARDS ══ */
+    .props-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1rem; padding: 1.4rem;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+    }
+    .card:hover { border-color: var(--muted); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+
+    .prop-card-inner { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
+    .prop-name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: .4rem; }
+    .prop-meta { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--subtle); display: flex; flex-direction: column; gap: .22rem; }
+    .prop-meta-row { display: flex; align-items: center; gap: .4rem; }
+    .prop-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+
+    .prop-actions { display: flex; flex-direction: column; align-items: flex-end; gap: .55rem; }
+
+    .bookings-count {
+      font-family: 'DM Mono', monospace; font-size: .68rem;
+      padding: .22rem .7rem; border-radius: 9999px;
+      background: var(--muted); color: var(--accent);
+    }
+
+    .icon-btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      font-family: 'DM Mono', monospace; font-size: .7rem; font-weight: 500; letter-spacing: .04em;
+      padding: .5rem 1rem; border-radius: .5rem; border: 1px solid var(--border);
+      background: transparent; color: var(--subtle); cursor: pointer; transition: all .2s;
+    }
+    .icon-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .icon-btn.syncing svg { animation: spin .8s linear infinite; }
+    .icon-btn.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+
+    .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot-amber { background: var(--accent); box-shadow: 0 0 5px var(--accent); }
+    .dot-red   { background: var(--muted); }
+
+    /* ══ SEARCH ══ */
+    .search-form {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; padding: 1.75rem; margin-bottom: 1.75rem;
+      display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;
+    }
+    .field input[type="date"] {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: .6rem; padding: .7rem 1rem;
+      color: var(--text); font-family: 'DM Mono', monospace; font-size: .875rem;
+      outline: none; transition: border-color .2s; color-scheme: dark;
+    }
+    .field input[type="date"]:focus { border-color: var(--accent); }
+    .search-btn {
+      font-family: 'DM Mono', monospace; font-size: .78rem; font-weight: 500;
+      letter-spacing: .07em; text-transform: uppercase;
+      padding: .72rem 2rem; border-radius: .6rem; border: none;
+      background: var(--accent); color: var(--bg); cursor: pointer;
+      transition: opacity .2s, transform .15s;
+    }
+    .search-btn:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
+    .search-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    .avail-badge {
+      font-family: 'DM Mono', monospace; font-size: .7rem;
+      padding: .28rem .8rem; border-radius: 9999px;
+      background: rgba(74,222,128,.08); color: var(--green); border: 1px solid rgba(74,222,128,.18);
+    }
+
+    /* ══ MISC ══ */
+    .empty { text-align: center; padding: 4rem 2rem; color: var(--subtle); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: .75rem; opacity: .35; }
+    .empty p { font-size: .875rem; }
+
+    .divider { height: 1px; background: var(--border); margin: 1.75rem 0; }
+
+    #toast {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 300;
+      font-family: 'DM Mono', monospace; font-size: .78rem;
+      padding: .85rem 1.4rem; border-radius: .75rem;
+      border: 1px solid var(--border); background: var(--surface);
+      transform: translateY(6rem); opacity: 0;
+      transition: all .35s cubic-bezier(.34,1.56,.64,1);
+      max-width: 300px; display: flex; align-items: center; gap: .6rem;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-color: rgba(74,222,128,.35); color: var(--green); }
+    #toast.error   { border-color: rgba(248,113,113,.35); color: var(--red); }
+
+    /* ── confirm dialog ── */
+    #confirm-overlay {
+      position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.65);
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; padding: 2rem; width: min(360px, 92vw);
+      animation: fadeUp .3s ease both;
+    }
+    .confirm-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: .5rem; }
+    .confirm-sub   { color: var(--subtle); font-size: .85rem; margin-bottom: 1.5rem; line-height: 1.5; }
+    .confirm-btns  { display: flex; gap: .75rem; justify-content: flex-end; }
+    .confirm-cancel {
+      padding: .6rem 1.25rem; border-radius: .6rem; border: 1px solid var(--border);
+      background: transparent; color: var(--subtle); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: .78rem; transition: border-color .2s;
+    }
+    .confirm-cancel:hover { border-color: var(--muted); color: var(--text); }
+    .confirm-ok {
+      padding: .6rem 1.25rem; border-radius: .6rem; border: none;
+      background: var(--red); color: #fff; cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: .78rem; font-weight: 500; transition: opacity .2s;
+    }
+    .confirm-ok:hover { opacity: .82; }
+
+    @keyframes spin   { to { transform: rotate(360deg); } }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid var(--muted);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .7s linear infinite; display: inline-block;
+    }
+    .fade-up { animation: fadeUp .38s ease both; }
+
+    @keyframes shimmer { 0%,100%{opacity:.25} 50%{opacity:.55} }
+    .skeleton { background: var(--muted); border-radius: .75rem; animation: shimmer 1.4s ease infinite; }
+
+    @media (max-width: 680px) {
+      header { padding: 1rem 1.25rem; flex-wrap: wrap; gap: .75rem; }
+      main { padding: 1.5rem 1.25rem; }
+      .search-form, .add-form { grid-template-columns: 1fr; }
+      .props-grid { grid-template-columns: 1fr; }
+      .user-name { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════ LOGIN SCREEN ═══════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">STAYS</div>
+    <p class="login-sub">숙소 예약 관리 플랫폼</p>
+
+    <button class="google-btn" onclick="handleGoogleLogin()">
+      <svg class="google-logo" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.2l6.7-6.7C35.7 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6.1C12.4 13.1 17.8 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.3-4 6.1-9.9 6.1-17z"/>
+        <path fill="#FBBC05" d="M10.5 28.6A14.4 14.4 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.8-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.7 10.7l7.8-6.1z"/>
+        <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.6 2.3-7.7 2.3-6.2 0-11.6-3.6-13.5-8.9l-7.8 6.1C6.6 42.6 14.6 48 24 48z"/>
+      </svg>
+      Google 계정으로 로그인
+    </button>
+
+    <div id="client-id-notice" style="display:none;">
+      ⚙️ &nbsp;<strong>설정 필요</strong><br>
+      코드 상단 <code>GOOGLE_CLIENT_ID</code>를<br>
+      실제 Google OAuth Client ID로 교체하세요.<br>
+      <a href="https://console.cloud.google.com/apis/credentials" target="_blank">
+        console.cloud.google.com
+      </a>에서 발급 가능합니다.
+    </div>
+
+    <p class="login-notice">로그인 정보는 브라우저에만 저장됩니다.</p>
+  </div>
+</div>
+
+<!-- ═══════ APP ═══════ -->
+<div id="app" style="display:none;">
+  <header>
+    <div class="logo">STAYS <span>/ property ops</span></div>
+    <div class="header-right">
+      <nav>
+        <button class="nav-btn active" id="btn-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+        <button class="nav-btn"        id="btn-search"    onclick="switchTab('search')">Availability</button>
+      </nav>
+      <div class="user-pill">
+        <span class="user-name" id="user-name-el"></span>
+        <div id="user-avatar-wrap"></div>
+        <button class="logout-btn" onclick="handleLogout()" title="로그아웃">✕</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ─── DASHBOARD ─── -->
+    <section id="view-dashboard">
+      <h1 class="section-title font-display">내 숙소</h1>
+      <p class="section-sub">Airbnb iCal 링크를 등록하고 예약 현황을 동기화하세요.</p>
+
+      <!-- Add property panel -->
+      <div class="add-panel" id="add-panel">
+        <div class="add-panel-header" id="add-panel-hdr" onclick="toggleAddPanel()">
+          <div class="add-panel-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            새 숙소 등록
+          </div>
+          <svg id="add-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="add-panel-body" id="add-panel-body">
+          <div class="add-form">
+            <div class="field">
+              <label>숙소 이름</label>
+              <input type="text" id="new-name" placeholder="예) 한강뷰 스튜디오" />
+            </div>
+            <div class="field">
+              <label>Airbnb iCal URL</label>
+              <input type="url" id="new-ical" placeholder="https://www.airbnb.com/calendar/ical/..." />
+            </div>
+            <button class="add-btn" onclick="addProperty()">등록</button>
+          </div>
+          <div class="ical-hint">
+            💡 &nbsp;iCal 링크 찾는 법: <strong>에어비앤비 → 숙소 → 캘린더 → 가용성 설정 → iCal 내보내기</strong>
+          </div>
+        </div>
+      </div>
+
+      <div id="props-grid" class="props-grid"></div>
+    </section>
+
+    <!-- ─── SEARCH ─── -->
+    <section id="view-search" style="display:none;">
+      <h1 class="section-title font-display">가용성 검색</h1>
+      <p class="section-sub">날짜를 선택해 예약 가능한 숙소를 조회하세요.</p>
+
+      <div class="search-form">
+        <div class="field">
+          <label>체크인</label>
+          <input type="date" id="input-start" />
+        </div>
+        <div class="field">
+          <label>체크아웃</label>
+          <input type="date" id="input-end" />
+        </div>
+        <button class="search-btn" id="search-btn" onclick="searchProperties()">검색</button>
+      </div>
+      <div id="search-results"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ═══════ CONFIRM DIALOG ═══════ -->
+<div id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title font-display">숙소 삭제</div>
+    <p class="confirm-sub" id="confirm-msg"></p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">취소</button>
+      <button class="confirm-ok" id="confirm-ok-btn">삭제</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="toast-msg"></span></div>
+
+<script>
+/* ═══════════════════════════════════════
+   CONFIG — 아래 두 값을 실제 값으로 교체
+═══════════════════════════════════════ */
+const GOOGLE_CLIENT_ID = '63534884815-33arhsngevmr2d3p5gmfkvn0lqudm8dl.apps.googleusercontent.com';
+const BASE_URL = 'https://stays-app.onrender.com';
+
+/* ══ STATE ══ */
+let user = null;
+let properties = [];
+let syncingIds = new Set();
+let addPanelOpen = false;
+let pendingDeleteId = null;
+
+/* ══ STORAGE (localStorage — 브라우저에서 실행 시 사용) ══ */
+function storageKey() { return `stays_props_${user?.email || 'guest'}`; }
+function saveProps() {
+  localStorage.setItem(storageKey(), JSON.stringify(properties));
+}
+
+async function loadProps() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/properties`);
+    if (res.ok) {
+      properties = await res.json();
+      saveProps();
+      return;
+    }
+  } catch(e) {
+    console.warn('서버 연결 실패, 로컬 데이터 사용:', e.message);
+  }
+  try {
+    const raw = localStorage.getItem(storageKey());
+    properties = raw ? JSON.parse(raw) : [];
+  } catch { properties = []; }
+}
+
+/* ══ UTILS ══ */
+const $ = id => document.getElementById(id);
+
+function showToast(msg, type = 'success') {
+  const el = $('toast');
+  $('toast-msg').textContent = msg;
+  el.className = `show ${type}`;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = type, 3200);
+}
+
+function fmtDate(v) {
+  if (!v) return '—';
+  const d = new Date(v);
+  return isNaN(d) ? String(v) : d.toLocaleDateString('ko-KR', { year:'numeric', month:'short', day:'numeric' });
+}
+
+function fmtSynced(v) {
+  if (!v) return '미동기화';
+  const diff = Math.floor((Date.now() - new Date(v)) / 60000);
+  if (diff < 1) return '방금 전';
+  if (diff < 60) return `${diff}분 전`;
+  if (diff < 1440) return `${Math.floor(diff/60)}시간 전`;
+  return fmtDate(v);
+}
+
+function dotClass(p) {
+  if (!p.last_synced) return 'dot dot-red';
+  const hrs = (Date.now() - new Date(p.last_synced)) / 3600000;
+  return hrs < 6 ? 'dot dot-green' : hrs < 24 ? 'dot dot-amber' : 'dot dot-red';
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function genId() {
+  return 'prop_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+/* ══ GOOGLE AUTH ══ */
+function handleGoogleLogin() {
+  if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+    showToast('먼저 GOOGLE_CLIENT_ID를 설정해주세요.', 'error');
+    return;
+  }
+
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: 'openid email profile',
+    callback: async (tokenResp) => {
+      if (tokenResp.error) { showToast('로그인 실패: ' + tokenResp.error, 'error'); return; }
+      try {
+        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${tokenResp.access_token}` }
+        });
+        const info = await res.json();
+        user = { name: info.name, email: info.email, picture: info.picture };
+        localStorage.setItem('stays_user', JSON.stringify(user));
+        onLoggedIn();
+      } catch(e) { showToast('사용자 정보 조회 실패', 'error'); }
+    }
+  });
+  client.requestAccessToken();
+}
+
+function restoreSession() {
+  try {
+    const saved = localStorage.getItem('stays_user');
+    if (saved) { user = JSON.parse(saved); return true; }
+  } catch {}
+  return false;
+}
+
+async function onLoggedIn() {
+  $('login-screen').style.display = 'none';
+  $('app').style.display = 'flex';
+
+  $('user-name-el').textContent = user.name || user.email || '';
+  const wrap = $('user-avatar-wrap');
+  if (user.picture) {
+    const img = document.createElement('img');
+    img.className = 'user-avatar';
+    img.src = user.picture;
+    img.alt = user.name || '';
+    img.onerror = () => img.replaceWith(makeFallbackAvatar());
+    wrap.innerHTML = '';
+    wrap.appendChild(img);
+  } else {
+    wrap.innerHTML = '';
+    wrap.appendChild(makeFallbackAvatar());
+  }
+
+  // 로딩 표시
+  $('props-grid').innerHTML = '<div class="skeleton" style="height:120px; grid-column:1/-1;"></div>';
+  await loadProps();
+  renderProperties();
+  initDateDefaults();
+}
+
+function makeFallbackAvatar() {
+  const el = document.createElement('div');
+  el.className = 'user-avatar-fallback';
+  el.textContent = (user.name || user.email || '?')[0].toUpperCase();
+  return el;
+}
+
+function handleLogout() {
+  user = null;
+  properties = [];
+  localStorage.removeItem('stays_user');
+  $('app').style.display = 'none';
+  $('login-screen').style.display = 'flex';
+  // reset UI
+  $('props-grid').innerHTML = '';
+  $('search-results').innerHTML = '';
+  switchTab('dashboard');
+}
+
+/* ══ TAB ══ */
+function switchTab(tab) {
+  $('view-dashboard').style.display = tab === 'dashboard' ? '' : 'none';
+  $('view-search').style.display    = tab === 'search'    ? '' : 'none';
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  $(`btn-${tab}`).classList.add('active');
+}
+
+/* ══ ADD PANEL ══ */
+function toggleAddPanel() {
+  addPanelOpen = !addPanelOpen;
+  const body = $('add-panel-body');
+  const hdr  = $('add-panel-hdr');
+  body.className = 'add-panel-body' + (addPanelOpen ? ' open' : '');
+  hdr.className  = 'add-panel-header' + (addPanelOpen ? ' open' : '');
+  $('add-chevron').style.transform = addPanelOpen ? 'rotate(180deg)' : '';
+}
+
+/* ══ ADD PROPERTY ══ */
+async function addProperty() {
+  const name = $('new-name').value.trim();
+  const url  = $('new-ical').value.trim();
+
+  if (!name) { showToast('숙소 이름을 입력해주세요.', 'error'); return; }
+  if (!url)  { showToast('iCal URL을 입력해주세요.', 'error'); return; }
+  if (!url.startsWith('http')) { showToast('올바른 URL 형식이 아닙니다.', 'error'); return; }
+
+  const newProp = {
+    property_id: genId(),
+    name,
+    ical_url: url,
+    bookings: [],
+    last_synced: null
+  };
+
+  // backend 등록 시도 (실패 시 로컬에만 저장)
+  try {
+    const res = await fetch(`${BASE_URL}/api/properties`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProp)
+    });
+    if (res.ok) {
+      const saved = await res.json();
+      newProp.property_id = saved.property_id || newProp.property_id;
+    }
+  } catch(e) {
+    console.warn('백엔드 미연결, 로컬 저장:', e.message);
+  }
+
+  properties.unshift(newProp);
+  saveProps();
+  renderProperties();
+
+  $('new-name').value = '';
+  $('new-ical').value = '';
+  if (addPanelOpen) toggleAddPanel();
+  showToast(`"${name}" 등록 완료`, 'success');
+}
+
+/* ══ DELETE ══ */
+function confirmDelete(id, name) {
+  pendingDeleteId = id;
+  $('confirm-msg').textContent = `"${name}" 숙소를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`;
+  $('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  pendingDeleteId = null;
+  $('confirm-overlay').classList.remove('open');
+}
+
+$('confirm-ok-btn').onclick = async function() {
+  if (!pendingDeleteId) return;
+  const id = pendingDeleteId;
+  const name = (properties.find(p => p.property_id === id)||{}).name || id;
+  closeConfirm();
+
+  try {
+    await fetch(`${BASE_URL}/api/properties/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  } catch(e) { console.warn('백엔드 삭제 실패 (로컬만 제거):', e.message); }
+
+  properties = properties.filter(p => p.property_id !== id);
+  saveProps();
+  renderProperties();
+  showToast(`"${name}" 삭제됐습니다.`, 'success');
+};
+
+/* ══ SYNC ══ */
+async function syncProperty(id) {
+  syncingIds.add(id);
+  renderProperties();
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/properties/${encodeURIComponent(id)}/sync`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const idx = properties.findIndex(p => p.property_id === id);
+    if (idx !== -1) {
+      properties[idx].last_synced = new Date().toISOString();
+      if (data.bookings) properties[idx].bookings = data.bookings;
+      saveProps();
+    }
+    showToast('동기화 완료 ✓', 'success');
+  } catch(e) {
+    showToast(`동기화 실패: ${e.message}`, 'error');
+  } finally {
+    syncingIds.delete(id);
+    renderProperties();
+  }
+}
+
+/* ══ RENDER PROPERTIES ══ */
+function renderProperties() {
+  const grid = $('props-grid');
+
+  if (!properties.length) {
+    grid.innerHTML = `
+      <div class="empty" style="grid-column:1/-1;">
+        <div class="empty-icon">🏠</div>
+        <p>등록된 숙소가 없습니다.</p>
+        <p style="margin-top:.5rem; font-size:.8rem; color:var(--muted);">
+          위 "새 숙소 등록"을 눌러 Airbnb iCal 링크를 추가하세요.
+        </p>
+      </div>`;
+    return;
+  }
+
+  grid.innerHTML = properties.map((p, i) => {
+    const syncing = syncingIds.has(p.property_id);
+    const safeName = escHtml(p.name);
+    const safeId   = escHtml(p.property_id);
+    return `
+    <div class="card fade-up" style="animation-delay:${i*.06}s">
+      <div class="prop-card-inner">
+        <div>
+          <div style="display:flex; align-items:center; gap:.55rem; margin-bottom:.5rem;">
+            <span class="${dotClass(p)}"></span>
+            <h3 class="prop-name">${safeName}</h3>
+          </div>
+          <div class="prop-meta">
+            <div class="prop-meta-row">
+              <span class="prop-meta-dot"></span>
+              <span>동기화: ${fmtSynced(p.last_synced)}</span>
+            </div>
+            <div class="prop-meta-row" style="max-width:240px; overflow:hidden;">
+              <span class="prop-meta-dot"></span>
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(p.ical_url)}">
+                ${escHtml(p.ical_url)}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="prop-actions">
+          <span class="bookings-count">${(p.bookings||[]).length} 예약</span>
+          <button class="icon-btn ${syncing?'syncing':''}"
+                  onclick="syncProperty('${safeId}')"
+                  ${syncing?'disabled':''}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            ${syncing ? '동기화 중…' : '동기화'}
+          </button>
+          <button class="icon-btn danger" onclick="confirmDelete('${safeId}', '${safeName}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/>
+              <path d="M9 6V4h6v2"/>
+            </svg>
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ SEARCH ══ */
+async function searchProperties() {
+  const start = $('input-start').value;
+  const end   = $('input-end').value;
+
+  if (!start || !end) { showToast('날짜를 모두 선택해주세요.', 'error'); return; }
+  if (new Date(end) <= new Date(start)) { showToast('체크아웃은 체크인 이후여야 합니다.', 'error'); return; }
+
+  const btn = $('search-btn');
+  btn.disabled = true; btn.textContent = '검색 중…';
+  $('search-results').innerHTML = `
+    <div style="text-align:center; padding:3rem; color:var(--subtle);">
+      <div class="spinner" style="margin:0 auto 1rem;"></div>
+      <p class="font-mono" style="font-size:.78rem;">가용 숙소 조회 중…</p>
+    </div>`;
+
+  let results;
+  try {
+    const params = new URLSearchParams({
+      start: new Date(start).toISOString(),
+      end:   new Date(end).toISOString()
+    });
+    const res = await fetch(`${BASE_URL}/api/properties/search?${params}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    results = await res.json();
+  } catch(e) {
+    // 클라이언트 사이드 필터 (로컬 데이터)
+    const s = new Date(start), en = new Date(end);
+    results = properties.filter(p =>
+      !(p.bookings||[]).some(b => new Date(b.start) < en && new Date(b.end) > s)
+    );
+  } finally {
+    btn.disabled = false; btn.textContent = '검색';
+  }
+
+  renderSearchResults(results, start, end);
+}
+
+function renderSearchResults(results, start, end) {
+  const nights = Math.round((new Date(end) - new Date(start)) / 86400000);
+  const hdr = `
+    <div class="divider"></div>
+    <p class="font-mono" style="font-size:.73rem; color:var(--subtle); margin-bottom:1rem; letter-spacing:.04em;">
+      ${fmtDate(start)} → ${fmtDate(end)} &nbsp;·&nbsp; ${nights}박 &nbsp;·&nbsp; 가용 ${results.length}개
+    </p>`;
+
+  if (!results.length) {
+    $('search-results').innerHTML = hdr + `
+      <div class="empty">
+        <div class="empty-icon">📅</div>
+        <p>해당 기간에 이용 가능한 숙소가 없습니다.</p>
+      </div>`;
+    return;
+  }
+
+  const cards = results.map((p, i) => `
+    <div class="card fade-up" style="display:flex; align-items:center; justify-content:space-between; gap:1rem; animation-delay:${i*.07}s;">
+      <div>
+        <div style="display:flex; align-items:center; gap:.55rem; margin-bottom:.3rem;">
+          <span class="${dotClass(p)}"></span>
+          <span class="prop-name font-display" style="font-size:1.05rem;">${escHtml(p.name||p.property_id)}</span>
+        </div>
+        <p class="font-mono" style="font-size:.7rem; color:var(--subtle);">
+          마지막 동기화: ${fmtSynced(p.last_synced)}
+        </p>
+      </div>
+      <span class="avail-badge">예약 가능</span>
+    </div>`).join('');
+
+  $('search-results').innerHTML = hdr + `<div style="display:flex; flex-direction:column; gap:.75rem;">${cards}</div>`;
+}
+
+/* ══ INIT ══ */
+function initDateDefaults() {
+  const today = new Date().toISOString().split('T')[0];
+  const nw    = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+  $('input-start').value = today;
+  $('input-end').value   = nw;
+}
+
+(function init() {
+  if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') { document.getElementById('client-id-notice').style.display = 'block'; }
+  if (restoreSession()) onLoggedIn();
+})();
+</script>
+</body>
+</html>
