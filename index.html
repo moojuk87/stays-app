@@ -6,6 +6,8 @@
   <title>STAYS — Property Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <!-- Paperlogy 무료 한글 폰트 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/noonnu/paperlogy@0.0.2/paperlogy.css" />
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,7 +30,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Paperlogy', 'DM Sans', sans-serif;
+      font-weight: 600;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -118,7 +121,7 @@
 
     nav { display: flex; gap: .25rem; background: var(--surface); border: 1px solid var(--border); border-radius: 9999px; padding: .25rem; }
     .nav-btn {
-      font-family: 'DM Mono', monospace; font-size: .73rem; font-weight: 500;
+      font-family: 'Paperlogy', 'DM Mono', monospace; font-size: .73rem; font-weight: 700;
       letter-spacing: .06em; text-transform: uppercase;
       padding: .4rem 1.2rem; border-radius: 9999px; border: none; cursor: pointer;
       transition: all .22s; color: var(--subtle); background: transparent;
@@ -221,13 +224,13 @@
     }
     .card:hover { border-color: var(--muted); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
 
-    .prop-card-inner { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: start; }
-    .prop-name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; margin-bottom: .4rem; }
-    .prop-meta { font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--subtle); display: flex; flex-direction: column; gap: .22rem; }
+    .prop-card-inner { display: flex; flex-direction: column; gap: .75rem; }
+    .prop-name { font-family: 'Paperlogy', 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: .4rem; }
+    .prop-meta { font-family: 'Paperlogy', 'DM Mono', monospace; font-size: .72rem; font-weight: 500; color: var(--subtle); display: flex; flex-direction: column; gap: .22rem; }
     .prop-meta-row { display: flex; align-items: center; gap: .4rem; }
     .prop-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
 
-    .prop-actions { display: flex; flex-direction: column; align-items: flex-end; gap: .55rem; }
+    .prop-actions { display: flex; flex-direction: row; align-items: center; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
 
     .bookings-count {
       font-family: 'DM Mono', monospace; font-size: .68rem;
@@ -237,9 +240,10 @@
 
     .icon-btn {
       display: inline-flex; align-items: center; gap: .4rem;
-      font-family: 'DM Mono', monospace; font-size: .7rem; font-weight: 500; letter-spacing: .04em;
-      padding: .5rem 1rem; border-radius: .5rem; border: 1px solid var(--border);
+      font-family: 'Paperlogy', 'DM Mono', monospace; font-size: .75rem; font-weight: 600; letter-spacing: .04em;
+      padding: .6rem 1.1rem; border-radius: .5rem; border: 1px solid var(--border);
       background: transparent; color: var(--subtle); cursor: pointer; transition: all .2s;
+      white-space: nowrap;
     }
     .icon-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .icon-btn:disabled { opacity: .4; cursor: not-allowed; }
