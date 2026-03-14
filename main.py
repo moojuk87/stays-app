@@ -1,16 +1,15 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from motor.motor_asyncio import AsyncIOMotorClient
 import aiohttp
 from icalendar import Calendar
 from datetime import datetime
 from pydantic import BaseModel
-from typing import Optional, List
-import json
+from typing import Optional
 import os
 
 app = FastAPI()
 
-# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -19,18 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# JSON 파일로 데이터 저장 (MongoDB 대신)
-DB_FILE = "properties.json"
-
-def load_db():
-    if not os.path.exists(DB_FILE):
-        return []
-    with open(DB_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def save_db(data):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+# MongoDB Atlas 연결
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://moojuk87_db_user:PacZELc5EcSHKvU1@cluster0.rfozbtk.mongodb.net/?appName=Cluster0")
+client = AsyncIOMotorClient(MONGO_URL)
+db = client.stays_db
 
 class Property(BaseModel):
     property_id: str
@@ -42,34 +33,30 @@ class Property(BaseModel):
 # 숙소 전체 조회
 @app.get("/api/properties")
 async def get_properties():
-    return load_db()
+    props = await db.properties.find({}, {"_id": 0}).to_list(100)
+    return props
 
 # 숙소 등록
 @app.post("/api/properties")
 async def create_property(prop: Property):
-    props = load_db()
-    # 중복 체크
-    if any(p["property_id"] == prop.property_id for p in props):
+    existing = await db.properties.find_one({"property_id": prop.property_id})
+    if existing:
         return prop
-    props.append(prop.dict())
-    save_db(props)
+    await db.properties.insert_one(prop.dict())
     return prop
 
 # 숙소 삭제
 @app.delete("/api/properties/{id}")
 async def delete_property(id: str):
-    props = load_db()
-    new_props = [p for p in props if p["property_id"] != id]
-    if len(new_props) == len(props):
+    result = await db.properties.delete_one({"property_id": id})
+    if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="숙소를 찾을 수 없습니다.")
-    save_db(new_props)
     return {"status": "deleted"}
 
 # iCal 동기화
 @app.post("/api/properties/{id}/sync")
 async def sync_ical(id: str):
-    props = load_db()
-    prop = next((p for p in props if p["property_id"] == id), None)
+    prop = await db.properties.find_one({"property_id": id})
     if not prop:
         raise HTTPException(status_code=404, detail="숙소를 찾을 수 없습니다.")
     try:
@@ -87,12 +74,10 @@ async def sync_ical(id: str):
                     "end": str(end.dt)
                 })
         now = datetime.utcnow().isoformat()
-        for p in props:
-            if p["property_id"] == id:
-                p["bookings"] = bookings
-                p["last_synced"] = now
-                break
-        save_db(props)
+        await db.properties.update_one(
+            {"property_id": id},
+            {"$set": {"bookings": bookings, "last_synced": now}}
+        )
         return {"status": "success", "bookings": bookings}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"동기화 실패: {str(e)}")
@@ -100,7 +85,7 @@ async def sync_ical(id: str):
 # 가용 숙소 검색
 @app.get("/api/properties/search")
 async def search_properties(start: datetime, end: datetime):
-    props = load_db()
+    props = await db.properties.find({}, {"_id": 0}).to_list(100)
     available = []
     for p in props:
         bookings = p.get("bookings", [])
