@@ -66,6 +66,10 @@ async def sync_ical(id: str):
         cal = Calendar.from_ical(ics_data)
         bookings = []
         for c in cal.walk("VEVENT"):
+            # 취소된 예약 제외
+            status = str(c.get("status", "")).upper()
+            if status == "CANCELLED":
+                continue
             start = c.get("dtstart")
             end = c.get("dtend")
             if start and end:
