@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>STAYS — Property Manager</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <!-- Paperlogy 무료 한글 폰트 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/noonnu/paperlogy@0.0.2/paperlogy.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Pretendard - 깔끔한 한글 폰트 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -30,8 +30,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Paperlogy', 'DM Sans', sans-serif;
-      font-weight: 600;
+      font-family: 'Pretendard', 'Noto Sans KR', 'DM Sans', sans-serif;
+      font-weight: 500;
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -121,7 +121,7 @@
 
     nav { display: flex; gap: .25rem; background: var(--surface); border: 1px solid var(--border); border-radius: 9999px; padding: .25rem; }
     .nav-btn {
-      font-family: 'Paperlogy', 'DM Mono', monospace; font-size: .73rem; font-weight: 700;
+      font-family: 'Pretendard', 'DM Mono', monospace; font-size: .73rem; font-weight: 700;
       letter-spacing: .06em; text-transform: uppercase;
       padding: .4rem 1.2rem; border-radius: 9999px; border: none; cursor: pointer;
       transition: all .22s; color: var(--subtle); background: transparent;
@@ -225,8 +225,8 @@
     .card:hover { border-color: var(--muted); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
 
     .prop-card-inner { display: flex; flex-direction: column; gap: .75rem; }
-    .prop-name { font-family: 'Paperlogy', 'DM Serif Display', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: .4rem; }
-    .prop-meta { font-family: 'Paperlogy', 'DM Mono', monospace; font-size: .72rem; font-weight: 500; color: var(--subtle); display: flex; flex-direction: column; gap: .22rem; }
+    .prop-name { font-family: 'Pretendard', 'DM Sans', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: .4rem; }
+    .prop-meta { font-family: 'Pretendard', 'DM Mono', monospace; font-size: .72rem; font-weight: 400; color: var(--subtle); display: flex; flex-direction: column; gap: .22rem; }
     .prop-meta-row { display: flex; align-items: center; gap: .4rem; }
     .prop-meta-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
 
@@ -240,7 +240,7 @@
 
     .icon-btn {
       display: inline-flex; align-items: center; gap: .4rem;
-      font-family: 'Paperlogy', 'DM Mono', monospace; font-size: .75rem; font-weight: 600; letter-spacing: .04em;
+      font-family: 'Pretendard', 'DM Mono', monospace; font-size: .75rem; font-weight: 600; letter-spacing: .02em;
       padding: .6rem 1.1rem; border-radius: .5rem; border: 1px solid var(--border);
       background: transparent; color: var(--subtle); cursor: pointer; transition: all .2s;
       white-space: nowrap;
@@ -404,60 +404,86 @@
       background: var(--bg); border: 1px solid var(--border); border-radius: .5rem;
       color: var(--subtle); cursor: pointer; width: 30px; height: 30px;
       display: flex; align-items: center; justify-content: center;
-      font-size: .85rem; transition: all .2s;
+      font-size: .9rem; transition: all .2s;
     }
     .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
     .cal-today-btn {
       background: transparent; border: 1px solid var(--border); border-radius: .5rem;
       color: var(--subtle); cursor: pointer; padding: .2rem .75rem;
-      font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: .05em;
-      text-transform: uppercase; transition: all .2s;
+      font-family: 'Pretendard', sans-serif; font-size: .7rem; font-weight: 600;
+      transition: all .2s;
     }
     .cal-today-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .cal-grid {
+
+    /* DOW header row */
+    .cal-dow-row {
       display: grid; grid-template-columns: repeat(7, 1fr);
       border-left: 1px solid var(--border);
     }
     .cal-dow {
-      text-align: center; padding: .6rem .25rem;
-      font-family: 'DM Mono', monospace; font-size: .65rem;
-      letter-spacing: .08em; text-transform: uppercase;
+      text-align: center; padding: .55rem .25rem;
+      font-family: 'Pretendard', sans-serif; font-size: .68rem;
+      font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
       color: var(--subtle); border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
-    .cal-cell {
-      min-height: 72px; padding: .4rem .4rem .3rem;
+
+    /* Week row */
+    .cal-week-row {
+      position: relative;
+      border-left: 1px solid var(--border);
+    }
+    .cal-days-row {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .cal-day-cell {
       border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      position: relative; vertical-align: top;
+      padding: .35rem .4rem;
     }
-    .cal-cell.other-month .cal-day-num { opacity: .25; }
-    .cal-cell.today { background: rgba(201,169,110,.05); }
-    .cal-cell.today .cal-day-num {
-      background: var(--accent); color: var(--bg);
-      border-radius: 50%; width: 22px; height: 22px;
-      display: flex; align-items: center; justify-content: center;
-    }
+    .cal-day-cell.other-month .cal-day-num { opacity: .22; }
+    .cal-day-cell.today-cell { background: rgba(201,169,110,.04); }
     .cal-day-num {
-      font-family: 'DM Mono', monospace; font-size: .72rem;
-      color: var(--subtle); margin-bottom: .3rem; width: 22px; height: 22px;
+      font-family: 'DM Mono', monospace; font-size: .7rem;
+      color: var(--subtle); width: 22px; height: 22px;
       display: flex; align-items: center; justify-content: center;
     }
-    .cal-booking {
-      font-size: .6rem; font-family: 'Paperlogy','DM Mono', monospace;
-      padding: .15rem .4rem; border-radius: .25rem; margin-bottom: .2rem;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      opacity: .9; cursor: default;
+    .today-num {
+      background: var(--accent); color: var(--bg);
+      border-radius: 50%; font-weight: 700;
     }
+
+    /* Booking bars layer */
+    .cal-bars-layer {
+      position: relative; padding: 0 0 6px 0;
+    }
+    .cal-bar-row {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      height: 22px; margin-bottom: 2px;
+    }
+    .cal-bar-slot { position: relative; }
+    .cal-bar {
+      position: absolute; top: 1px; bottom: 1px;
+      font-family: 'Pretendard', sans-serif; font-size: .66rem; font-weight: 600;
+      display: flex; align-items: center; padding: 0 6px;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+      z-index: 2; pointer-events: auto; cursor: default;
+    }
+    .cal-bar.bar-start { border-radius: 4px 0 0 4px; padding-left: 7px; }
+    .cal-bar.bar-end   { border-radius: 0 4px 4px 0; }
+    .cal-bar.bar-solo  { border-radius: 4px; }
+    .cal-bar.bar-mid   { border-radius: 0; }
+
     .cal-legend {
-      display: flex; flex-wrap: wrap; gap: .6rem 1.2rem;
-      padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+      display: flex; flex-wrap: wrap; gap: .5rem 1rem;
+      padding: .85rem 1.5rem; border-top: 1px solid var(--border);
     }
     .cal-legend-item {
-      display: flex; align-items: center; gap: .45rem;
-      font-family: 'Paperlogy','DM Mono', monospace; font-size: .72rem; color: var(--subtle);
+      display: flex; align-items: center; gap: .4rem;
+      font-family: 'Pretendard', sans-serif; font-size: .72rem; font-weight: 500; color: var(--subtle);
     }
-    .cal-legend-dot { width: 10px; height: 10px; border-radius: .2rem; flex-shrink: 0; }
+    .cal-legend-dot { width: 9px; height: 9px; border-radius: .2rem; flex-shrink: 0; }
 
     @media (max-width: 680px) {
       header { padding: 1rem 1.25rem; flex-wrap: wrap; gap: .75rem; }
@@ -465,12 +491,7 @@
       .search-form, .add-form { grid-template-columns: 1fr; }
       .props-grid { grid-template-columns: 1fr; }
       .user-name { display: none; }
-      .cal-cell { min-height: 52px; }
-      .cal-booking { display: none; }
-      .cal-cell.has-booking::after {
-        content: ''; display: block; width: 6px; height: 6px;
-        border-radius: 50%; background: var(--accent); margin-top: .15rem;
-      }
+      .cal-bar { font-size: .58rem; }
     }
   </style>
 </head>
@@ -567,7 +588,7 @@
             <button class="cal-nav-btn" onclick="calMove(1)">›</button>
           </div>
         </div>
-        <div class="cal-grid" id="cal-grid"></div>
+        <div id="cal-body"></div>
         <div class="cal-legend" id="cal-legend"></div>
       </div>
     </section>
@@ -1124,72 +1145,135 @@ function renderCalendar() {
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   $('cal-month-label').textContent = `${calYear}년 ${monthNames[calMonth]}`;
 
-  // 이번 달 날짜 범위
-  const firstDay = new Date(calYear, calMonth, 1);
-  const lastDay  = new Date(calYear, calMonth + 1, 0);
-  const startDow = firstDay.getDay(); // 0=일
-  const today    = new Date(); today.setHours(0,0,0,0);
+  const firstDay  = new Date(calYear, calMonth, 1);
+  const lastDay   = new Date(calYear, calMonth + 1, 0);
+  const startDow  = firstDay.getDay();
+  const today     = new Date(); today.setHours(0,0,0,0);
 
-  // 달력에 표시할 전체 셀 (앞 빈칸 + 이번달 + 뒷 빈칸)
-  const cells = [];
-  for (let i = 0; i < startDow; i++) {
-    const d = new Date(calYear, calMonth, -startDow + i + 1);
-    cells.push({ date: d, cur: false });
-  }
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    cells.push({ date: new Date(calYear, calMonth, d), cur: true });
-  }
-  while (cells.length % 7 !== 0) {
-    const d = new Date(calYear, calMonth + 1, cells.length - lastDay.getDate() - startDow + 1);
-    cells.push({ date: d, cur: false });
+  // 달력 전체 날짜 배열 (앞뒤 여백 포함)
+  const allDates = [];
+  for (let i = 0; i < startDow; i++)
+    allDates.push(new Date(calYear, calMonth, -startDow + i + 1));
+  for (let d = 1; d <= lastDay.getDate(); d++)
+    allDates.push(new Date(calYear, calMonth, d));
+  while (allDates.length % 7 !== 0) {
+    const extra = allDates.length - lastDay.getDate() - startDow + 1;
+    allDates.push(new Date(calYear, calMonth + 1, extra));
   }
 
-  // 숙소별 색상 매핑
+  // 숙소별 색상
   const colorMap = {};
   properties.forEach((p, i) => { colorMap[p.property_id] = CAL_COLORS[i % CAL_COLORS.length]; });
 
-  // 날짜별 예약 수집
-  function dateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-  const bookingsByDate = {};
+  // 모든 예약 수집
+  const allBookings = [];
   properties.forEach(p => {
     (p.bookings || []).forEach(b => {
-      const start = new Date(b.start); start.setHours(0,0,0,0);
-      const end   = new Date(b.end);   end.setHours(0,0,0,0);
-      // 각 날짜에 예약 추가
-      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
-        const key = dateStr(d);
-        if (!bookingsByDate[key]) bookingsByDate[key] = [];
-        bookingsByDate[key].push({ propId: p.property_id, name: displayName(p), summary: b.summary || '' });
-      }
+      const s = new Date(b.start); s.setHours(0,0,0,0);
+      const e = new Date(b.end);   e.setHours(0,0,0,0);
+      if (s < e) allBookings.push({ propId: p.property_id, name: displayName(p), start: s, end: e, color: colorMap[p.property_id] });
     });
   });
 
-  // DOW 헤더
+  function toMs(d) { return d.getTime(); }
+
+  // 주별 처리
+  const weeks = [];
+  for (let i = 0; i < allDates.length; i += 7) weeks.push(allDates.slice(i, i + 7));
+
+  const DAY_NUM_H = 26; // 날짜 숫자 영역 높이
+  const BAR_H     = 18; // 바 높이
+  const BAR_GAP   = 2;  // 바 간격
+
   const dows = ['일','월','화','수','목','금','토'];
-  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  let html = `<div class="cal-dow-row">${dows.map(d => `<div class="cal-dow">${d}</div>`).join('')}</div>`;
 
-  // 셀 렌더
-  cells.forEach(({ date, cur }) => {
-    const key = dateStr(date);
-    const isToday = date.getTime() === today.getTime();
-    const bookings = bookingsByDate[key] || [];
-    const cls = [
-      'cal-cell',
-      !cur ? 'other-month' : '',
-      isToday ? 'today' : '',
-      bookings.length ? 'has-booking' : ''
-    ].filter(Boolean).join(' ');
+  weeks.forEach(week => {
+    const weekStart = new Date(week[0]); weekStart.setHours(0,0,0,0);
+    const weekEnd   = new Date(week[6]); weekEnd.setDate(weekEnd.getDate() + 1); weekEnd.setHours(0,0,0,0);
 
-    const bItems = bookings.slice(0, 3).map(b => {
-      const c = colorMap[b.propId] || CAL_COLORS[0];
-      return `<div class="cal-booking" style="background:${c.bg}; color:${c.text};" title="${escHtml(b.name)}">${escHtml(b.name)}</div>`;
+    // 이번 주와 겹치는 예약
+    const overlapping = allBookings.filter(b => toMs(b.start) < toMs(weekEnd) && toMs(b.end) > toMs(weekStart));
+
+    // 레인 배정 (겹치지 않도록)
+    const laneEnds = []; // 각 레인의 마지막 끝나는 시간
+    const placed = overlapping.map(b => {
+      const cs = toMs(b.start) < toMs(weekStart) ? weekStart : b.start;
+      let lane = laneEnds.findIndex(e => e <= toMs(cs));
+      if (lane === -1) { lane = laneEnds.length; laneEnds.push(0); }
+      const ce = toMs(b.end) > toMs(weekEnd) ? weekEnd : b.end;
+      laneEnds[lane] = toMs(ce);
+      return { ...b, lane, cs, ce };
+    });
+
+    const numLanes  = laneEnds.length || 0;
+    const rowHeight = DAY_NUM_H + numLanes * (BAR_H + BAR_GAP) + 8;
+
+    // 날짜 셀 (배경 그리드)
+    const dayCells = week.map(date => {
+      const isCur   = date.getMonth() === calMonth;
+      const isToday = toMs(date) === toMs(today);
+      return `<div class="cal-day-cell ${!isCur ? 'other-month' : ''} ${isToday ? 'today-cell' : ''}">
+        <span class="cal-day-num ${isToday ? 'today-num' : ''}">${date.getDate()}</span>
+      </div>`;
     }).join('');
-    const more = bookings.length > 3 ? `<div style="font-size:.58rem; color:var(--muted); padding-left:.3rem;">+${bookings.length-3}개</div>` : '';
 
-    html += `<div class="${cls}"><div class="cal-day-num">${date.getDate()}</div>${bItems}${more}</div>`;
+    // 바 렌더링 — 레인별로 7칸 그리드 행 생성
+    const laneRows = Array.from({ length: numLanes }, () =>
+      Array(7).fill(null)  // 각 레인: 7슬롯, null = 빈칸
+    );
+
+    placed.forEach(b => {
+      const startCol = Math.round((toMs(b.cs) - toMs(weekStart)) / 86400000);
+      const endCol   = Math.round((toMs(b.ce) - toMs(weekStart)) / 86400000);
+      // 이 바가 차지하는 첫 번째 슬롯에만 정보 저장, 나머지는 'span'
+      for (let c = startCol; c < endCol; c++) {
+        if (c === startCol) {
+          laneRows[b.lane][c] = {
+            ...b, startCol, endCol,
+            isStart: toMs(b.start) >= toMs(weekStart),
+            isEnd:   toMs(b.end)   <= toMs(weekEnd),
+            span: endCol - startCol
+          };
+        } else {
+          laneRows[b.lane][c] = 'span'; // 이미 앞 슬롯이 차지
+        }
+      }
+    });
+
+    // 레인을 그리드 행으로 변환
+    let barsHtml = '';
+    laneRows.forEach(lane => {
+      let rowHtml = '';
+      let c = 0;
+      while (c < 7) {
+        const slot = lane[c];
+        if (!slot) {
+          rowHtml += `<div></div>`;
+          c++;
+        } else if (slot === 'span') {
+          // 앞 슬롯이 grid-column으로 차지하므로 skip
+          c++;
+        } else {
+          const { isStart, isEnd, span, color, name } = slot;
+          const shape = isStart && isEnd ? 'bar-solo' : isStart ? 'bar-start' : isEnd ? 'bar-end' : 'bar-mid';
+          rowHtml += `<div style="grid-column: span ${span}; position:relative;">
+            <div class="cal-bar ${shape}" style="left:${isStart?'3px':'0'}; right:${isEnd?'3px':'0'}; background:${color.bg}; color:${color.text};" title="${escHtml(name)}">${isStart ? escHtml(name) : ''}</div>
+          </div>`;
+          c += span;
+        }
+      }
+      barsHtml += `<div class="cal-bar-row">${rowHtml}</div>`;
+    });
+
+    html += `
+    <div class="cal-week-row" style="height:${rowHeight}px; position:relative; border-bottom:1px solid var(--border);">
+      <div class="cal-days-row" style="height:${rowHeight}px;">${dayCells}</div>
+      <div class="cal-bars-layer" style="padding-top:${DAY_NUM_H}px;">${barsHtml}</div>
+    </div>`;
   });
 
-  $('cal-grid').innerHTML = html;
+  $('cal-body').innerHTML = html;
 
   // 범례
   $('cal-legend').innerHTML = properties.map((p, i) => {
