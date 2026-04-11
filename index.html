@@ -154,11 +154,12 @@
     main { flex: 1; padding: 2.5rem; max-width: 1200px; margin: 0 auto; width: 100%; }
 
     .section-title {
-      font-family: 'DM Serif Display', serif;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
       font-size: clamp(1.8rem, 3vw, 2.3rem);
+      font-weight: 700;
       line-height: 1.1; margin-bottom: .4rem;
     }
-    .section-sub { color: var(--subtle); font-size: .85rem; margin-bottom: 2rem; }
+    .section-sub { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; color: var(--subtle); font-size: .85rem; margin-bottom: 2rem; }
 
     /* ══ ADD PANEL ══ */
     .add-panel {
@@ -174,8 +175,8 @@
     .add-panel-header.open { border-bottom-color: var(--border); }
     .add-panel-title {
       display: flex; align-items: center; gap: .7rem;
-      font-family: 'DM Mono', monospace; font-size: .82rem;
-      font-weight: 500; letter-spacing: .06em; text-transform: uppercase;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: .85rem;
+      font-weight: 600; letter-spacing: .02em;
       color: var(--accent);
     }
     .add-panel-body { padding: 1.5rem; display: none; }
@@ -316,8 +317,8 @@
       border-radius: 1.25rem; padding: 2rem; width: min(360px, 92vw);
       animation: fadeUp .3s ease both;
     }
-    .confirm-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: .5rem; }
-    .confirm-sub   { color: var(--subtle); font-size: .85rem; margin-bottom: 1.5rem; line-height: 1.5; }
+    .confirm-title { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: .5rem; }
+    .confirm-sub   { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; color: var(--subtle); font-size: .85rem; margin-bottom: 1.5rem; line-height: 1.5; }
     .confirm-btns  { display: flex; gap: .75rem; justify-content: flex-end; }
     .confirm-cancel {
       padding: .6rem 1.25rem; border-radius: .6rem; border: 1px solid var(--border);
@@ -357,8 +358,8 @@
       border-radius: 1.25rem; padding: 2rem; width: min(360px, 92vw);
       animation: fadeUp .3s ease both;
     }
-    .rename-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: .5rem; }
-    .rename-sub { color: var(--subtle); font-size: .82rem; margin-bottom: 1.25rem; }
+    .rename-title { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: .5rem; }
+    .rename-sub { font-family: 'Pretendard', 'Noto Sans KR', sans-serif; color: var(--subtle); font-size: .82rem; margin-bottom: 1.25rem; }
     .rename-input {
       width: 100%; background: var(--bg); border: 1px solid var(--border);
       border-radius: .6rem; padding: .75rem 1rem;
@@ -397,7 +398,7 @@
       padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border);
     }
     .cal-title {
-      font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text);
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text);
     }
     .cal-nav { display: flex; gap: .5rem; align-items: center; }
     .cal-nav-btn {
@@ -422,8 +423,8 @@
     }
     .cal-dow {
       text-align: center; padding: .55rem .25rem;
-      font-family: 'Pretendard', sans-serif; font-size: .68rem;
-      font-weight: 600; letter-spacing: .05em; text-transform: uppercase;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: .7rem;
+      font-weight: 600;
       color: var(--subtle); border-right: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
     }
@@ -445,7 +446,7 @@
     .cal-day-cell.other-month .cal-day-num { opacity: .22; }
     .cal-day-cell.today-cell { background: rgba(201,169,110,.04); }
     .cal-day-num {
-      font-family: 'DM Mono', monospace; font-size: .7rem;
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: .72rem; font-weight: 500;
       color: var(--subtle); width: 22px; height: 22px;
       display: flex; align-items: center; justify-content: center;
     }
