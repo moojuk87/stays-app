@@ -416,31 +416,30 @@
     }
     .cal-today-btn:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* DOW header row */
     .cal-dow-row {
       display: grid; grid-template-columns: repeat(7, 1fr);
-      border-left: 1px solid var(--border);
+      border-left: 1px solid #2e3450;
     }
     .cal-dow {
       text-align: center; padding: .55rem .25rem;
       font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: .7rem;
       font-weight: 600;
-      color: var(--subtle); border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      color: var(--subtle); border-right: 1px solid #2e3450;
+      border-bottom: 1px solid #2e3450;
     }
 
     /* Week row */
     .cal-week-row {
       position: relative;
-      border-left: 1px solid var(--border);
+      border-left: 1px solid #2e3450;
     }
     .cal-days-row {
       display: grid; grid-template-columns: repeat(7, 1fr);
       position: absolute; inset: 0; pointer-events: none;
     }
     .cal-day-cell {
-      border-right: 1px solid var(--border);
-      border-bottom: 1px solid var(--border);
+      border-right: 1px solid #2e3450;
+      border-bottom: 1px solid #2e3450;
       padding: .35rem .4rem;
     }
     .cal-day-cell.other-month .cal-day-num { opacity: .22; }
@@ -1146,12 +1145,11 @@ function renderCalendar() {
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
   $('cal-month-label').textContent = `${calYear}년 ${monthNames[calMonth]}`;
 
-  const firstDay  = new Date(calYear, calMonth, 1);
-  const lastDay   = new Date(calYear, calMonth + 1, 0);
-  const startDow  = firstDay.getDay();
-  const today     = new Date(); today.setHours(0,0,0,0);
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay  = new Date(calYear, calMonth + 1, 0);
+  const startDow = firstDay.getDay();
+  const today    = new Date(); today.setHours(0,0,0,0);
 
-  // 달력 전체 날짜 배열 (앞뒤 여백 포함)
   const allDates = [];
   for (let i = 0; i < startDow; i++)
     allDates.push(new Date(calYear, calMonth, -startDow + i + 1));
@@ -1162,11 +1160,9 @@ function renderCalendar() {
     allDates.push(new Date(calYear, calMonth + 1, extra));
   }
 
-  // 숙소별 색상
   const colorMap = {};
   properties.forEach((p, i) => { colorMap[p.property_id] = CAL_COLORS[i % CAL_COLORS.length]; });
 
-  // 모든 예약 수집
   const allBookings = [];
   properties.forEach(p => {
     (p.bookings || []).forEach(b => {
@@ -1176,15 +1172,13 @@ function renderCalendar() {
     });
   });
 
-  function toMs(d) { return d.getTime(); }
-
-  // 주별 처리
   const weeks = [];
   for (let i = 0; i < allDates.length; i += 7) weeks.push(allDates.slice(i, i + 7));
 
-  const DAY_NUM_H = 26; // 날짜 숫자 영역 높이
-  const BAR_H     = 18; // 바 높이
-  const BAR_GAP   = 2;  // 바 간격
+  const DAY_NUM_H   = 28;
+  const BAR_H       = 19;
+  const BAR_GAP     = 3;
+  const CHECKOUT_F  = 0.38; // 체크아웃 날 바가 걸치는 비율 (0~1)
 
   const dows = ['일','월','화','수','목','금','토'];
   let html = `<div class="cal-dow-row">${dows.map(d => `<div class="cal-dow">${d}</div>`).join('')}</div>`;
@@ -1192,12 +1186,12 @@ function renderCalendar() {
   weeks.forEach(week => {
     const weekStart = new Date(week[0]); weekStart.setHours(0,0,0,0);
     const weekEnd   = new Date(week[6]); weekEnd.setDate(weekEnd.getDate() + 1); weekEnd.setHours(0,0,0,0);
+    const toMs = d => d.getTime();
 
-    // 이번 주와 겹치는 예약
     const overlapping = allBookings.filter(b => toMs(b.start) < toMs(weekEnd) && toMs(b.end) > toMs(weekStart));
 
-    // 레인 배정 (겹치지 않도록)
-    const laneEnds = []; // 각 레인의 마지막 끝나는 시간
+    // 레인 배정
+    const laneEnds = [];
     const placed = overlapping.map(b => {
       const cs = toMs(b.start) < toMs(weekStart) ? weekStart : b.start;
       let lane = laneEnds.findIndex(e => e <= toMs(cs));
@@ -1208,9 +1202,9 @@ function renderCalendar() {
     });
 
     const numLanes  = laneEnds.length || 0;
-    const rowHeight = DAY_NUM_H + numLanes * (BAR_H + BAR_GAP) + 8;
+    const rowHeight = DAY_NUM_H + numLanes * (BAR_H + BAR_GAP) + 10;
 
-    // 날짜 셀 (배경 그리드)
+    // 날짜 셀
     const dayCells = week.map(date => {
       const isCur   = date.getMonth() === calMonth;
       const isToday = toMs(date) === toMs(today);
@@ -1219,64 +1213,48 @@ function renderCalendar() {
       </div>`;
     }).join('');
 
-    // 바 렌더링 — 레인별로 7칸 그리드 행 생성
-    const laneRows = Array.from({ length: numLanes }, () =>
-      Array(7).fill(null)  // 각 레인: 7슬롯, null = 빈칸
-    );
-
-    placed.forEach(b => {
-      const startCol = Math.round((toMs(b.cs) - toMs(weekStart)) / 86400000);
-      const endCol   = Math.round((toMs(b.ce) - toMs(weekStart)) / 86400000);
-      // 이 바가 차지하는 첫 번째 슬롯에만 정보 저장, 나머지는 'span'
-      for (let c = startCol; c < endCol; c++) {
-        if (c === startCol) {
-          laneRows[b.lane][c] = {
-            ...b, startCol, endCol,
-            isStart: toMs(b.start) >= toMs(weekStart),
-            isEnd:   toMs(b.end)   <= toMs(weekEnd),
-            span: endCol - startCol
-          };
-        } else {
-          laneRows[b.lane][c] = 'span'; // 이미 앞 슬롯이 차지
-        }
-      }
-    });
-
-    // 레인을 그리드 행으로 변환
+    // 바 — 절대좌표 방식
     let barsHtml = '';
-    laneRows.forEach(lane => {
-      let rowHtml = '';
-      let c = 0;
-      while (c < 7) {
-        const slot = lane[c];
-        if (!slot) {
-          rowHtml += `<div></div>`;
-          c++;
-        } else if (slot === 'span') {
-          // 앞 슬롯이 grid-column으로 차지하므로 skip
-          c++;
-        } else {
-          const { isStart, isEnd, span, color, name } = slot;
-          const shape = isStart && isEnd ? 'bar-solo' : isStart ? 'bar-start' : isEnd ? 'bar-end' : 'bar-mid';
-          rowHtml += `<div style="grid-column: span ${span}; position:relative;">
-            <div class="cal-bar ${shape}" style="left:${isStart?'3px':'0'}; right:${isEnd?'3px':'0'}; background:${color.bg}; color:${color.text};" title="${escHtml(name)}">${isStart ? escHtml(name) : ''}</div>
-          </div>`;
-          c += span;
-        }
-      }
-      barsHtml += `<div class="cal-bar-row">${rowHtml}</div>`;
+    placed.forEach(b => {
+      const isStart  = toMs(b.start) >= toMs(weekStart);
+      const isEnd    = toMs(b.end)   <= toMs(weekEnd);
+      const startCol = (toMs(b.cs) - toMs(weekStart)) / 86400000;
+      const endCol   = (toMs(b.ce) - toMs(weekStart)) / 86400000;
+
+      // 체크아웃 날 CHECKOUT_F 만큼 바가 걸침
+      // 단, 다음 주로 이어지는 경우(isEnd=false)는 끝까지 꽉 채움
+      const leftPct  = startCol / 7 * 100;
+      const widthPct = isEnd
+        ? (endCol + CHECKOUT_F - startCol) / 7 * 100
+        : (endCol - startCol) / 7 * 100;
+
+      const top  = DAY_NUM_H + b.lane * (BAR_H + BAR_GAP);
+      const lPad = isStart ? 3 : 0;
+      const rPad = isEnd   ? 0 : 0; // 오른쪽 끝은 패딩 없이 꽉 채움
+
+      const radius = `${isStart ? '4px' : '0'} ${isEnd ? '4px' : '0'} ${isEnd ? '4px' : '0'} ${isStart ? '4px' : '0'}`;
+
+      barsHtml += `<div class="cal-bar" style="
+        position:absolute;
+        left:calc(${leftPct}% + ${lPad}px);
+        width:calc(${widthPct}% - ${lPad + rPad}px);
+        top:${top}px; height:${BAR_H}px;
+        background:${b.color.bg}; color:${b.color.text};
+        border-radius:${radius};
+      " title="${escHtml(b.name)}">${isStart ? escHtml(b.name) : ''}</div>`;
     });
 
     html += `
-    <div class="cal-week-row" style="height:${rowHeight}px; position:relative; border-bottom:1px solid var(--border);">
+    <div class="cal-week-row" style="height:${rowHeight}px; position:relative; border-bottom:1px solid #2e3450;">
       <div class="cal-days-row" style="height:${rowHeight}px;">${dayCells}</div>
-      <div class="cal-bars-layer" style="padding-top:${DAY_NUM_H}px;">${barsHtml}</div>
+      <div style="position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; overflow:hidden;">
+        ${barsHtml}
+      </div>
     </div>`;
   });
 
   $('cal-body').innerHTML = html;
 
-  // 범례
   $('cal-legend').innerHTML = properties.map((p, i) => {
     const c = CAL_COLORS[i % CAL_COLORS.length];
     return `<div class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.text};"></span>${escHtml(displayName(p))}</div>`;
