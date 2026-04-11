@@ -345,12 +345,132 @@
     @keyframes shimmer { 0%,100%{opacity:.25} 50%{opacity:.55} }
     .skeleton { background: var(--muted); border-radius: .75rem; animation: shimmer 1.4s ease infinite; }
 
+    /* ══ RENAME MODAL ══ */
+    #rename-overlay {
+      position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.65);
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #rename-overlay.open { display: flex; }
+    .rename-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; padding: 2rem; width: min(360px, 92vw);
+      animation: fadeUp .3s ease both;
+    }
+    .rename-title { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: .5rem; }
+    .rename-sub { color: var(--subtle); font-size: .82rem; margin-bottom: 1.25rem; }
+    .rename-input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: .6rem; padding: .75rem 1rem;
+      color: var(--text); font-family: 'Paperlogy','DM Sans', sans-serif; font-size: .95rem;
+      outline: none; transition: border-color .2s; margin-bottom: 1.25rem;
+    }
+    .rename-input:focus { border-color: var(--accent); }
+    .rename-btns { display: flex; gap: .75rem; justify-content: flex-end; }
+    .rename-cancel {
+      padding: .6rem 1.25rem; border-radius: .6rem; border: 1px solid var(--border);
+      background: transparent; color: var(--subtle); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: .78rem; transition: border-color .2s;
+    }
+    .rename-cancel:hover { border-color: var(--muted); color: var(--text); }
+    .rename-ok {
+      padding: .6rem 1.25rem; border-radius: .6rem; border: none;
+      background: var(--accent); color: var(--bg); cursor: pointer;
+      font-family: 'DM Mono', monospace; font-size: .78rem; font-weight: 600; transition: opacity .2s;
+    }
+    .rename-ok:hover { opacity: .85; }
+    .edit-name-btn {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      padding: .1rem .3rem; border-radius: .3rem; transition: color .2s; line-height: 1;
+      flex-shrink: 0;
+    }
+    .edit-name-btn:hover { color: var(--accent); }
+
+    /* ══ CALENDAR ══ */
+    .cal-section {
+      margin-top: 2.5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; overflow: hidden;
+    }
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 1.5rem; border-bottom: 1px solid var(--border);
+    }
+    .cal-title {
+      font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: var(--text);
+    }
+    .cal-nav { display: flex; gap: .5rem; align-items: center; }
+    .cal-nav-btn {
+      background: var(--bg); border: 1px solid var(--border); border-radius: .5rem;
+      color: var(--subtle); cursor: pointer; width: 30px; height: 30px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .85rem; transition: all .2s;
+    }
+    .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-today-btn {
+      background: transparent; border: 1px solid var(--border); border-radius: .5rem;
+      color: var(--subtle); cursor: pointer; padding: .2rem .75rem;
+      font-family: 'DM Mono', monospace; font-size: .7rem; letter-spacing: .05em;
+      text-transform: uppercase; transition: all .2s;
+    }
+    .cal-today-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      border-left: 1px solid var(--border);
+    }
+    .cal-dow {
+      text-align: center; padding: .6rem .25rem;
+      font-family: 'DM Mono', monospace; font-size: .65rem;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--subtle); border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-cell {
+      min-height: 72px; padding: .4rem .4rem .3rem;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      position: relative; vertical-align: top;
+    }
+    .cal-cell.other-month .cal-day-num { opacity: .25; }
+    .cal-cell.today { background: rgba(201,169,110,.05); }
+    .cal-cell.today .cal-day-num {
+      background: var(--accent); color: var(--bg);
+      border-radius: 50%; width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cal-day-num {
+      font-family: 'DM Mono', monospace; font-size: .72rem;
+      color: var(--subtle); margin-bottom: .3rem; width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cal-booking {
+      font-size: .6rem; font-family: 'Paperlogy','DM Mono', monospace;
+      padding: .15rem .4rem; border-radius: .25rem; margin-bottom: .2rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      opacity: .9; cursor: default;
+    }
+    .cal-legend {
+      display: flex; flex-wrap: wrap; gap: .6rem 1.2rem;
+      padding: 1rem 1.5rem; border-top: 1px solid var(--border);
+    }
+    .cal-legend-item {
+      display: flex; align-items: center; gap: .45rem;
+      font-family: 'Paperlogy','DM Mono', monospace; font-size: .72rem; color: var(--subtle);
+    }
+    .cal-legend-dot { width: 10px; height: 10px; border-radius: .2rem; flex-shrink: 0; }
+
     @media (max-width: 680px) {
       header { padding: 1rem 1.25rem; flex-wrap: wrap; gap: .75rem; }
       main { padding: 1.5rem 1.25rem; }
       .search-form, .add-form { grid-template-columns: 1fr; }
       .props-grid { grid-template-columns: 1fr; }
       .user-name { display: none; }
+      .cal-cell { min-height: 52px; }
+      .cal-booking { display: none; }
+      .cal-cell.has-booking::after {
+        content: ''; display: block; width: 6px; height: 6px;
+        border-radius: 50%; background: var(--accent); margin-top: .15rem;
+      }
     }
   </style>
 </head>
@@ -436,6 +556,20 @@
       </div>
 
       <div id="props-grid" class="props-grid"></div>
+
+      <!-- ─── 통합 달력 ─── -->
+      <div class="cal-section" id="cal-section" style="display:none;">
+        <div class="cal-header">
+          <span class="cal-title" id="cal-month-label"></span>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" onclick="calMove(-1)">‹</button>
+            <button class="cal-today-btn" onclick="calGoToday()">오늘</button>
+            <button class="cal-nav-btn" onclick="calMove(1)">›</button>
+          </div>
+        </div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-legend" id="cal-legend"></div>
+      </div>
     </section>
 
     <!-- ─── SEARCH ─── -->
@@ -460,6 +594,18 @@
 </div>
 
 <!-- ═══════ CONFIRM DIALOG ═══════ -->
+<div id="rename-overlay">
+  <div class="rename-box">
+    <div class="rename-title font-display">숙소 이름 변경</div>
+    <p class="rename-sub">별칭을 저장합니다. 원본 데이터는 변경되지 않습니다.</p>
+    <input type="text" class="rename-input" id="rename-input" placeholder="새 이름 입력" />
+    <div class="rename-btns">
+      <button class="rename-cancel" onclick="closeRename()">취소</button>
+      <button class="rename-ok" onclick="doRename()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div id="confirm-overlay">
   <div class="confirm-box">
     <div class="confirm-title font-display">숙소 삭제</div>
@@ -486,11 +632,28 @@ let properties = [];
 let syncingIds = new Set();
 let addPanelOpen = false;
 let pendingDeleteId = null;
+let propNicknames = {};    // { property_id: '별칭' }
+let calYear, calMonth;     // 달력 현재 표시 연/월
+let renamingId = null;
 
 /* ══ STORAGE (localStorage — 브라우저에서 실행 시 사용) ══ */
 function storageKey() { return `stays_props_${user?.email || 'guest'}`; }
+function nicknameKey() { return `stays_names_${user?.email || 'guest'}`; }
+
 function saveProps() {
   localStorage.setItem(storageKey(), JSON.stringify(properties));
+}
+function saveNicknames() {
+  localStorage.setItem(nicknameKey(), JSON.stringify(propNicknames));
+}
+function loadNicknames() {
+  try {
+    const raw = localStorage.getItem(nicknameKey());
+    propNicknames = raw ? JSON.parse(raw) : {};
+  } catch { propNicknames = {}; }
+}
+function displayName(p) {
+  return propNicknames[p.property_id] || p.name;
 }
 
 async function loadProps() {
@@ -615,6 +778,7 @@ async function onLoggedIn() {
   }
 
   initDateDefaults();
+  loadNicknames();
   await loadProps(); // 로컬 즉시 렌더 → 백그라운드 서버 갱신
 }
 
@@ -756,6 +920,18 @@ async function syncProperty(id) {
 }
 
 /* ══ RENDER PROPERTIES ══ */
+// 숙소별 달력 색상 팔레트
+const CAL_COLORS = [
+  { bg: 'rgba(96,165,250,.22)',  text: '#60a5fa' },
+  { bg: 'rgba(74,222,128,.22)',  text: '#4ade80' },
+  { bg: 'rgba(251,191,36,.22)',  text: '#fbbf24' },
+  { bg: 'rgba(248,113,113,.22)', text: '#f87171' },
+  { bg: 'rgba(167,139,250,.22)', text: '#a78bfa' },
+  { bg: 'rgba(251,146,60,.22)',  text: '#fb923c' },
+  { bg: 'rgba(34,211,238,.22)',  text: '#22d3ee' },
+  { bg: 'rgba(244,114,182,.22)', text: '#f472b6' },
+];
+
 function renderProperties() {
   const grid = $('props-grid');
 
@@ -768,12 +944,13 @@ function renderProperties() {
           위 "새 숙소 등록"을 눌러 Airbnb iCal 링크를 추가하세요.
         </p>
       </div>`;
+    $('cal-section').style.display = 'none';
     return;
   }
 
   grid.innerHTML = properties.map((p, i) => {
-    const syncing = syncingIds.has(p.property_id);
-    const safeName = escHtml(p.name);
+    const syncing  = syncingIds.has(p.property_id);
+    const safeName = escHtml(displayName(p));
     const safeId   = escHtml(p.property_id);
     return `
     <div class="card fade-up" style="animation-delay:${i*.06}s">
@@ -782,6 +959,12 @@ function renderProperties() {
           <div style="display:flex; align-items:center; gap:.55rem; margin-bottom:.5rem;">
             <span class="${dotClass(p)}"></span>
             <h3 class="prop-name">${safeName}</h3>
+            <button class="edit-name-btn" onclick="openRename('${safeId}')" title="이름 변경">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
           </div>
           <div class="prop-meta">
             <div class="prop-meta-row">
@@ -821,6 +1004,11 @@ function renderProperties() {
       </div>
     </div>`;
   }).join('');
+
+  // 달력 표시
+  $('cal-section').style.display = '';
+  if (!calYear) { const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); }
+  renderCalendar();
 }
 
 /* ══ SEARCH ══ */
@@ -893,6 +1081,121 @@ function renderSearchResults(results, start, end) {
     </div>`).join('');
 
   $('search-results').innerHTML = hdr + `<div style="display:flex; flex-direction:column; gap:.75rem;">${cards}</div>`;
+}
+
+/* ══ RENAME ══ */
+function openRename(id) {
+  renamingId = id;
+  const p = properties.find(p => p.property_id === id);
+  $('rename-input').value = propNicknames[id] || (p ? p.name : '');
+  $('rename-overlay').classList.add('open');
+  setTimeout(() => $('rename-input').select(), 80);
+}
+function closeRename() {
+  renamingId = null;
+  $('rename-overlay').classList.remove('open');
+}
+function doRename() {
+  const val = $('rename-input').value.trim();
+  if (!val) { showToast('이름을 입력해주세요.', 'error'); return; }
+  if (renamingId) {
+    propNicknames[renamingId] = val;
+    saveNicknames();
+    renderProperties();
+    showToast('이름이 변경되었습니다.', 'success');
+  }
+  closeRename();
+}
+$('rename-input').addEventListener('keydown', e => { if (e.key === 'Enter') doRename(); if (e.key === 'Escape') closeRename(); });
+
+/* ══ CALENDAR ══ */
+function calMove(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function calGoToday() {
+  const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  $('cal-month-label').textContent = `${calYear}년 ${monthNames[calMonth]}`;
+
+  // 이번 달 날짜 범위
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay  = new Date(calYear, calMonth + 1, 0);
+  const startDow = firstDay.getDay(); // 0=일
+  const today    = new Date(); today.setHours(0,0,0,0);
+
+  // 달력에 표시할 전체 셀 (앞 빈칸 + 이번달 + 뒷 빈칸)
+  const cells = [];
+  for (let i = 0; i < startDow; i++) {
+    const d = new Date(calYear, calMonth, -startDow + i + 1);
+    cells.push({ date: d, cur: false });
+  }
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    cells.push({ date: new Date(calYear, calMonth, d), cur: true });
+  }
+  while (cells.length % 7 !== 0) {
+    const d = new Date(calYear, calMonth + 1, cells.length - lastDay.getDate() - startDow + 1);
+    cells.push({ date: d, cur: false });
+  }
+
+  // 숙소별 색상 매핑
+  const colorMap = {};
+  properties.forEach((p, i) => { colorMap[p.property_id] = CAL_COLORS[i % CAL_COLORS.length]; });
+
+  // 날짜별 예약 수집
+  function dateStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  const bookingsByDate = {};
+  properties.forEach(p => {
+    (p.bookings || []).forEach(b => {
+      const start = new Date(b.start); start.setHours(0,0,0,0);
+      const end   = new Date(b.end);   end.setHours(0,0,0,0);
+      // 각 날짜에 예약 추가
+      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+        const key = dateStr(d);
+        if (!bookingsByDate[key]) bookingsByDate[key] = [];
+        bookingsByDate[key].push({ propId: p.property_id, name: displayName(p), summary: b.summary || '' });
+      }
+    });
+  });
+
+  // DOW 헤더
+  const dows = ['일','월','화','수','목','금','토'];
+  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  // 셀 렌더
+  cells.forEach(({ date, cur }) => {
+    const key = dateStr(date);
+    const isToday = date.getTime() === today.getTime();
+    const bookings = bookingsByDate[key] || [];
+    const cls = [
+      'cal-cell',
+      !cur ? 'other-month' : '',
+      isToday ? 'today' : '',
+      bookings.length ? 'has-booking' : ''
+    ].filter(Boolean).join(' ');
+
+    const bItems = bookings.slice(0, 3).map(b => {
+      const c = colorMap[b.propId] || CAL_COLORS[0];
+      return `<div class="cal-booking" style="background:${c.bg}; color:${c.text};" title="${escHtml(b.name)}">${escHtml(b.name)}</div>`;
+    }).join('');
+    const more = bookings.length > 3 ? `<div style="font-size:.58rem; color:var(--muted); padding-left:.3rem;">+${bookings.length-3}개</div>` : '';
+
+    html += `<div class="${cls}"><div class="cal-day-num">${date.getDate()}</div>${bItems}${more}</div>`;
+  });
+
+  $('cal-grid').innerHTML = html;
+
+  // 범례
+  $('cal-legend').innerHTML = properties.map((p, i) => {
+    const c = CAL_COLORS[i % CAL_COLORS.length];
+    return `<div class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.text};"></span>${escHtml(displayName(p))}</div>`;
+  }).join('');
 }
 
 /* ══ INIT ══ */
