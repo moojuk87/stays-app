@@ -346,6 +346,71 @@
     @keyframes shimmer { 0%,100%{opacity:.25} 50%{opacity:.55} }
     .skeleton { background: var(--muted); border-radius: .75rem; animation: shimmer 1.4s ease infinite; }
 
+    /* ══ TODAY BRIEFING ══ */
+    .briefing {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; padding: 1.4rem 1.6rem;
+      margin-bottom: 2rem;
+    }
+    .briefing-top {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+      padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    .briefing-date {
+      display: flex; align-items: baseline; gap: .6rem;
+    }
+    .briefing-date-num {
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+      font-size: 1.55rem; font-weight: 700; color: var(--text);
+      letter-spacing: -.01em;
+    }
+    .briefing-date-sub {
+      font-family: 'Pretendard', sans-serif; font-size: .8rem;
+      color: var(--subtle); font-weight: 500;
+    }
+    .briefing-weather {
+      display: flex; align-items: center; gap: .7rem;
+      font-family: 'Pretendard', sans-serif;
+    }
+    .briefing-weather-icon { font-size: 1.6rem; line-height: 1; }
+    .briefing-weather-temp { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .briefing-weather-desc { font-size: .78rem; color: var(--subtle); }
+    .briefing-weather-loc { font-size: .68rem; color: var(--muted); margin-top: 1px; }
+
+    .briefing-bottom {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;
+      padding-top: 1rem;
+    }
+    .briefing-col-title {
+      font-family: 'Pretendard', sans-serif; font-size: .72rem; font-weight: 600;
+      color: var(--subtle); margin-bottom: .55rem;
+      display: flex; align-items: center; gap: .4rem;
+    }
+    .briefing-col-count {
+      background: var(--muted); color: var(--accent);
+      padding: .08rem .48rem; border-radius: 9999px;
+      font-family: 'DM Mono', monospace; font-size: .66rem;
+    }
+    .briefing-list {
+      display: flex; flex-direction: column; gap: .35rem;
+    }
+    .briefing-item {
+      display: flex; align-items: center; gap: .5rem;
+      font-family: 'Pretendard', sans-serif; font-size: .84rem; color: var(--text);
+      padding: .35rem 0;
+    }
+    .briefing-item-dot {
+      width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+    }
+    .briefing-empty {
+      font-family: 'Pretendard', sans-serif; font-size: .78rem;
+      color: var(--muted); padding: .35rem 0;
+    }
+    @media (max-width: 680px) {
+      .briefing-bottom { grid-template-columns: 1fr; gap: 1rem; }
+    }
+
     /* ══ RENAME MODAL ══ */
     #rename-overlay {
       position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.65);
@@ -546,6 +611,38 @@
   <main>
     <!-- ─── DASHBOARD ─── -->
     <section id="view-dashboard">
+
+      <!-- 오늘의 브리핑 -->
+      <div class="briefing" id="briefing">
+        <div class="briefing-top">
+          <div class="briefing-date">
+            <span class="briefing-date-num" id="brief-date"></span>
+            <span class="briefing-date-sub" id="brief-weekday"></span>
+          </div>
+          <div class="briefing-weather" id="brief-weather">
+            <span class="briefing-weather-icon" id="brief-w-icon">⏳</span>
+            <div>
+              <div><span class="briefing-weather-temp" id="brief-w-temp">—</span> <span class="briefing-weather-desc" id="brief-w-desc">날씨 불러오는 중…</span></div>
+              <div class="briefing-weather-loc" id="brief-w-loc"></div>
+            </div>
+          </div>
+        </div>
+        <div class="briefing-bottom">
+          <div>
+            <div class="briefing-col-title">
+              🔑 오늘 체크인 <span class="briefing-col-count" id="brief-in-count">0</span>
+            </div>
+            <div class="briefing-list" id="brief-checkin"></div>
+          </div>
+          <div>
+            <div class="briefing-col-title">
+              🚪 오늘 체크아웃 <span class="briefing-col-count" id="brief-out-count">0</span>
+            </div>
+            <div class="briefing-list" id="brief-checkout"></div>
+          </div>
+        </div>
+      </div>
+
       <h1 class="section-title font-display">내 숙소</h1>
       <p class="section-sub">Airbnb iCal 링크를 등록하고 예약 현황을 동기화하세요.</p>
 
@@ -800,6 +897,8 @@ async function onLoggedIn() {
 
   initDateDefaults();
   loadNicknames();
+  renderBriefingDate();
+  loadWeather();
   await loadProps(); // 로컬 즉시 렌더 → 백그라운드 서버 갱신
 }
 
@@ -966,6 +1065,7 @@ function renderProperties() {
         </p>
       </div>`;
     $('cal-section').style.display = 'none';
+    renderTodayBookings();
     return;
   }
 
@@ -1030,6 +1130,7 @@ function renderProperties() {
   $('cal-section').style.display = '';
   if (!calYear) { const n = new Date(); calYear = n.getFullYear(); calMonth = n.getMonth(); }
   renderCalendar();
+  renderTodayBookings();
 }
 
 /* ══ SEARCH ══ */
@@ -1259,6 +1360,125 @@ function renderCalendar() {
     const c = CAL_COLORS[i % CAL_COLORS.length];
     return `<div class="cal-legend-item"><span class="cal-legend-dot" style="background:${c.text};"></span>${escHtml(displayName(p))}</div>`;
   }).join('');
+}
+
+/* ══ TODAY BRIEFING ══ */
+const WEATHER_CODE = {
+  0:  { icon:'☀️',  desc:'맑음' },
+  1:  { icon:'🌤️',  desc:'대체로 맑음' },
+  2:  { icon:'⛅',  desc:'구름 조금' },
+  3:  { icon:'☁️',  desc:'흐림' },
+  45: { icon:'🌫️',  desc:'안개' },
+  48: { icon:'🌫️',  desc:'짙은 안개' },
+  51: { icon:'🌦️',  desc:'가랑비' },
+  53: { icon:'🌦️',  desc:'이슬비' },
+  55: { icon:'🌧️',  desc:'이슬비' },
+  61: { icon:'🌧️',  desc:'약한 비' },
+  63: { icon:'🌧️',  desc:'비' },
+  65: { icon:'🌧️',  desc:'강한 비' },
+  71: { icon:'🌨️',  desc:'약한 눈' },
+  73: { icon:'🌨️',  desc:'눈' },
+  75: { icon:'❄️',  desc:'강한 눈' },
+  77: { icon:'🌨️',  desc:'싸락눈' },
+  80: { icon:'🌦️',  desc:'소나기' },
+  81: { icon:'🌧️',  desc:'소나기' },
+  82: { icon:'⛈️',  desc:'강한 소나기' },
+  85: { icon:'🌨️',  desc:'눈 소나기' },
+  86: { icon:'❄️',  desc:'강한 눈 소나기' },
+  95: { icon:'⛈️',  desc:'천둥번개' },
+  96: { icon:'⛈️',  desc:'우박 동반' },
+  99: { icon:'⛈️',  desc:'강한 우박' },
+};
+
+function renderBriefingDate() {
+  const now = new Date();
+  const dows = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+  $('brief-date').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일`;
+  $('brief-weekday').textContent = dows[now.getDay()];
+}
+
+function renderTodayBookings() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const t = today.getTime();
+  const checkins  = [];
+  const checkouts = [];
+
+  properties.forEach((p, i) => {
+    const color = CAL_COLORS[i % CAL_COLORS.length];
+    (p.bookings || []).forEach(b => {
+      const s = new Date(b.start); s.setHours(0,0,0,0);
+      const e = new Date(b.end);   e.setHours(0,0,0,0);
+      if (s.getTime() === t) checkins.push({ name: displayName(p), color });
+      if (e.getTime() === t) checkouts.push({ name: displayName(p), color });
+    });
+  });
+
+  $('brief-in-count').textContent  = checkins.length;
+  $('brief-out-count').textContent = checkouts.length;
+
+  $('brief-checkin').innerHTML  = checkins.length
+    ? checkins.map(c => `<div class="briefing-item"><span class="briefing-item-dot" style="background:${c.color.text};"></span>${escHtml(c.name)}</div>`).join('')
+    : `<div class="briefing-empty">오늘 체크인 없음</div>`;
+
+  $('brief-checkout').innerHTML = checkouts.length
+    ? checkouts.map(c => `<div class="briefing-item"><span class="briefing-item-dot" style="background:${c.color.text};"></span>${escHtml(c.name)}</div>`).join('')
+    : `<div class="briefing-empty">오늘 체크아웃 없음</div>`;
+}
+
+async function fetchWeather(lat, lon, locName) {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=auto`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('weather fetch failed');
+    const data = await res.json();
+    const code = data.current.weather_code;
+    const temp = Math.round(data.current.temperature_2m);
+    const info = WEATHER_CODE[code] || { icon: '🌡️', desc: '정보 없음' };
+    $('brief-w-icon').textContent = info.icon;
+    $('brief-w-temp').textContent = `${temp}°`;
+    $('brief-w-desc').textContent = info.desc;
+    $('brief-w-loc').textContent  = locName || '';
+  } catch(e) {
+    $('brief-w-icon').textContent = '🌡️';
+    $('brief-w-temp').textContent = '—';
+    $('brief-w-desc').textContent = '날씨 정보를 불러올 수 없습니다';
+    $('brief-w-loc').textContent  = '';
+  }
+}
+
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${lat}&longitude=${lon}&language=ko&count=1`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const r = (data.results || [])[0];
+    if (!r) return null;
+    return r.admin2 || r.admin1 || r.name || null;
+  } catch { return null; }
+}
+
+function loadWeather() {
+  const FALLBACK = { lat: 37.5665, lon: 126.9780, name: '서울' };
+
+  const tryGeo = new Promise((resolve) => {
+    if (!navigator.geolocation) return resolve(null);
+    const timer = setTimeout(() => resolve(null), 5000);
+    navigator.geolocation.getCurrentPosition(
+      pos => { clearTimeout(timer); resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }); },
+      ()  => { clearTimeout(timer); resolve(null); },
+      { timeout: 5000, maximumAge: 600000 }
+    );
+  });
+
+  tryGeo.then(async (pos) => {
+    if (pos) {
+      const name = await reverseGeocode(pos.lat, pos.lon);
+      fetchWeather(pos.lat, pos.lon, name || '');
+    } else {
+      fetchWeather(FALLBACK.lat, FALLBACK.lon, FALLBACK.name);
+    }
+  });
 }
 
 /* ══ INIT ══ */
