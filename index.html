@@ -216,22 +216,45 @@
     }
 
     /* ══ PROPERTY CARDS ══ */
-    .props-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: .85rem; }
+    .props-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: .75rem; align-items: start; /* 개별 카드가 내용만큼만 차지 */
+    }
 
     .card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 1rem; padding: 1.1rem 1.2rem;
+      border-radius: .85rem; padding: .85rem 1rem;
       transition: border-color .2s, transform .2s, box-shadow .2s;
     }
-    .card:hover { border-color: var(--muted); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+    .card:hover { border-color: var(--muted); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(0,0,0,.35); }
 
-    .prop-card-inner { display: flex; flex-direction: column; gap: .6rem; }
-    .prop-name { font-family: 'Pretendard', 'DM Sans', sans-serif; font-size: 1.02rem; font-weight: 700; margin-bottom: 0; }
-    .prop-meta { font-family: 'Pretendard', 'DM Mono', monospace; font-size: .7rem; font-weight: 400; color: var(--subtle); display: flex; flex-direction: column; gap: .18rem; }
-    .prop-meta-row { display: flex; align-items: center; gap: .4rem; }
-    .prop-meta-dot { width: 3px; height: 3px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    /* 새 콤팩트 레이아웃 — 헤더 행 + 메타 한 줄 + 액션 행 */
+    .prop-head {
+      display: flex; align-items: center; gap: .45rem;
+      margin-bottom: .45rem;
+    }
+    .prop-name {
+      font-family: 'Pretendard', 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 700; margin: 0;
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .prop-head-actions { display: flex; gap: .15rem; flex-shrink: 0; }
 
-    .prop-actions { display: flex; flex-direction: row; align-items: center; gap: .45rem; flex-wrap: wrap; justify-content: flex-end; margin-top: .3rem; }
+    .prop-meta-line {
+      font-family: 'Pretendard', 'DM Mono', monospace;
+      font-size: .7rem; color: var(--subtle);
+      display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+      margin-bottom: .55rem;
+    }
+    .prop-meta-line .sep { color: var(--muted); }
+    .prop-meta-line .ph  { color: var(--accent); }
+    .prop-meta-line .ph.empty { color: var(--muted); }
+
+    .prop-actions {
+      display: flex; align-items: center; gap: .4rem;
+      justify-content: flex-end; flex-wrap: wrap;
+    }
 
     .bookings-count {
       font-family: 'DM Mono', monospace; font-size: .66rem;
@@ -240,9 +263,9 @@
     }
 
     .icon-btn {
-      display: inline-flex; align-items: center; gap: .35rem;
-      font-family: 'Pretendard', 'DM Mono', monospace; font-size: .72rem; font-weight: 600; letter-spacing: .02em;
-      padding: .45rem .85rem; border-radius: .45rem; border: 1px solid var(--border);
+      display: inline-flex; align-items: center; gap: .3rem;
+      font-family: 'Pretendard', 'DM Mono', monospace; font-size: .7rem; font-weight: 600;
+      padding: .38rem .72rem; border-radius: .4rem; border: 1px solid var(--border);
       background: transparent; color: var(--subtle); cursor: pointer; transition: all .2s;
       white-space: nowrap;
     }
@@ -860,15 +883,23 @@
   </div>
 </div>
 
-<!-- 숙소 번호 편집 모달 -->
+<!-- 숙소 연락·문구 설정 모달 -->
 <div id="phone-overlay" class="generic-overlay">
   <div class="generic-box">
-    <div class="generic-title">관리자 번호 설정</div>
+    <div class="generic-title">숙소 연락 · 문구 설정</div>
     <p class="generic-sub" id="phone-sub"></p>
     <div class="generic-field">
       <label>관리자 전화번호</label>
       <input type="tel" class="generic-input" id="phone-input" placeholder="예) 010-1234-5678" />
-      <div class="generic-hint">문자 보내기 버튼을 눌렀을 때 이 번호로 문자 앱이 열립니다.</div>
+    </div>
+    <div class="generic-field">
+      <label>체크인 문구 <span style="color:var(--muted); font-weight:400;">(비워두면 기본값 사용)</span></label>
+      <textarea class="generic-textarea" id="pmsg-checkin" placeholder="이 숙소만의 체크인 문구를 입력하세요. 비워두면 설정의 기본 문구가 쓰입니다."></textarea>
+    </div>
+    <div class="generic-field">
+      <label>체크아웃 문구 <span style="color:var(--muted); font-weight:400;">(비워두면 기본값 사용)</span></label>
+      <textarea class="generic-textarea" id="pmsg-checkout" placeholder="이 숙소만의 체크아웃 문구를 입력하세요."></textarea>
+      <div class="generic-hint"><code>{숙소명}</code> 을 쓰면 숙소 이름으로 자동 치환됩니다.</div>
     </div>
     <div class="generic-btns">
       <button class="generic-cancel" onclick="closePhone()">취소</button>
@@ -917,6 +948,7 @@ let addPanelOpen = false;
 let pendingDeleteId = null;
 let propNicknames = {};    // { property_id: '별칭' }
 let propPhones = {};       // { property_id: '010-...' }
+let propMessages = {};     // { property_id: { checkin: '...', checkout: '...' } }
 let smsTemplates = {
   checkin:  '[{숙소명}] 오늘 체크인 예정입니다. 청소 완료 확인 부탁드립니다.',
   checkout: '[{숙소명}] 오늘 체크아웃입니다. 청소 진행 부탁드립니다.'
@@ -952,6 +984,21 @@ function loadPhones() {
     const raw = localStorage.getItem(phoneKey());
     propPhones = raw ? JSON.parse(raw) : {};
   } catch { propPhones = {}; }
+}
+function messagesKey() { return `stays_pmsg_${user?.email || 'guest'}`; }
+function savePropMessages() {
+  localStorage.setItem(messagesKey(), JSON.stringify(propMessages));
+}
+function loadPropMessages() {
+  try {
+    const raw = localStorage.getItem(messagesKey());
+    propMessages = raw ? JSON.parse(raw) : {};
+  } catch { propMessages = {}; }
+}
+function getPropMessage(propId, kind) {
+  const m = propMessages[propId];
+  if (m && m[kind] && m[kind].trim()) return m[kind];
+  return kind === 'checkin' ? smsTemplates.checkin : smsTemplates.checkout;
 }
 function saveTemplates() {
   localStorage.setItem(tplKey(), JSON.stringify(smsTemplates));
@@ -1096,6 +1143,7 @@ async function onLoggedIn() {
   initDateDefaults();
   loadNicknames();
   loadPhones();
+  loadPropMessages();
   loadTemplates();
   renderBriefingDate();
   loadWeather();
@@ -1281,66 +1329,55 @@ function renderProperties() {
     const syncing  = syncingIds.has(p.property_id);
     const safeName = escHtml(displayName(p));
     const safeId   = escHtml(p.property_id);
+    const phone    = getPhone(p.property_id);
+    const urlShort = (p.ical_url || '').replace(/^https?:\/\//, '').slice(0, 28) + '…';
     return `
-    <div class="card fade-up" style="animation-delay:${i*.06}s">
-      <div class="prop-card-inner">
-        <div>
-          <div style="display:flex; align-items:center; gap:.55rem; margin-bottom:.5rem;">
-            <span class="${dotClass(p)}"></span>
-            <h3 class="prop-name">${safeName}</h3>
-            <button class="edit-name-btn" onclick="openRename('${safeId}')" title="이름 변경">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-            <button class="edit-name-btn" onclick="openPhone('${safeId}')" title="관리자 번호">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
-            </button>
-          </div>
-          <div class="prop-meta">
-            <div class="prop-meta-row">
-              <span class="prop-meta-dot"></span>
-              <span>동기화: ${fmtSynced(p.last_synced)}</span>
-            </div>
-            <div class="prop-meta-row">
-              <span class="prop-meta-dot"></span>
-              <span class="prop-phone-badge ${getPhone(p.property_id)?'':'empty'}">
-                ${getPhone(p.property_id) ? '📱 ' + escHtml(getPhone(p.property_id)) : '📱 관리자 번호 미등록'}
-              </span>
-            </div>
-            <div class="prop-meta-row" style="max-width:240px; overflow:hidden;">
-              <span class="prop-meta-dot"></span>
-              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escHtml(p.ical_url)}">
-                ${escHtml(p.ical_url)}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div class="prop-actions">
-          <span class="bookings-count">${(p.bookings||[]).length} 예약</span>
-          <button class="icon-btn ${syncing?'syncing':''}"
-                  onclick="syncProperty('${safeId}')"
-                  ${syncing?'disabled':''}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="23 4 23 10 17 10"/>
-              <polyline points="1 20 1 14 7 14"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-            </svg>
-            ${syncing ? '동기화 중…' : '동기화'}
-          </button>
-          <button class="icon-btn danger" onclick="confirmDelete('${safeId}', '${safeName}')">
+    <div class="card fade-up" style="animation-delay:${i*.05}s">
+      <div class="prop-head">
+        <span class="${dotClass(p)}"></span>
+        <h3 class="prop-name" title="${escHtml(p.ical_url)}">${safeName}</h3>
+        <div class="prop-head-actions">
+          <button class="edit-name-btn" onclick="openRename('${safeId}')" title="이름 변경">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14H6L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/>
-              <path d="M9 6V4h6v2"/>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
             </svg>
-            삭제
+          </button>
+          <button class="edit-name-btn" onclick="openPropConfig('${safeId}')" title="연락처 · 문구 설정">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
           </button>
         </div>
+      </div>
+      <div class="prop-meta-line">
+        <span>${fmtSynced(p.last_synced)}</span>
+        <span class="sep">·</span>
+        <span class="ph ${phone?'':'empty'}">${phone ? '📱 ' + escHtml(phone) : '📱 번호 미등록'}</span>
+        <span class="sep">·</span>
+        <span title="${escHtml(p.ical_url)}" style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">${escHtml(urlShort)}</span>
+      </div>
+      <div class="prop-actions">
+        <span class="bookings-count">${(p.bookings||[]).length} 예약</span>
+        <button class="icon-btn ${syncing?'syncing':''}"
+                onclick="syncProperty('${safeId}')"
+                ${syncing?'disabled':''}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
+          ${syncing ? '동기화 중' : '동기화'}
+        </button>
+        <button class="icon-btn danger" onclick="confirmDelete('${safeId}', '${safeName}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/>
+            <path d="M9 6V4h6v2"/>
+          </svg>
+          삭제
+        </button>
       </div>
     </div>`;
   }).join('');
@@ -1718,29 +1755,45 @@ function loadWeather() {
 }
 
 /* ══ SMS / PHONE / SETTINGS ══ */
-function openPhone(id) {
+function openPropConfig(id) {
   phoneEditingId = id;
   const p = properties.find(p => p.property_id === id);
-  $('phone-sub').textContent = p ? `"${displayName(p)}" 관리자 번호를 입력하세요.` : '';
-  $('phone-input').value = getPhone(id);
+  $('phone-sub').textContent = p ? `"${displayName(p)}" — 관리자 번호와 이 숙소 전용 문구를 설정합니다.` : '';
+  $('phone-input').value    = getPhone(id);
+  const m = propMessages[id] || {};
+  $('pmsg-checkin').value   = m.checkin  || '';
+  $('pmsg-checkout').value  = m.checkout || '';
   $('phone-overlay').classList.add('open');
   setTimeout(() => $('phone-input').focus(), 80);
 }
+// 이전 이름 호환 (기존 호출부가 있을 경우 대비)
+function openPhone(id) { openPropConfig(id); }
+
 function closePhone() {
   phoneEditingId = null;
   $('phone-overlay').classList.remove('open');
 }
 function savePhone() {
   if (!phoneEditingId) return closePhone();
+  const id = phoneEditingId;
+
+  // 전화번호
   const val = $('phone-input').value.trim();
-  if (val) {
-    propPhones[phoneEditingId] = val;
-  } else {
-    delete propPhones[phoneEditingId];
-  }
+  if (val) propPhones[id] = val;
+  else     delete propPhones[id];
   savePhones();
+
+  // 숙소별 문구
+  const ci = $('pmsg-checkin').value.trim();
+  const co = $('pmsg-checkout').value.trim();
+  if (!propMessages[id]) propMessages[id] = {};
+  if (ci) propMessages[id].checkin  = ci; else delete propMessages[id].checkin;
+  if (co) propMessages[id].checkout = co; else delete propMessages[id].checkout;
+  if (!propMessages[id].checkin && !propMessages[id].checkout) delete propMessages[id];
+  savePropMessages();
+
   renderProperties();
-  showToast(val ? '관리자 번호가 저장됐습니다.' : '관리자 번호가 삭제됐습니다.', 'success');
+  showToast('숙소 설정이 저장됐습니다.', 'success');
   closePhone();
 }
 
@@ -1770,10 +1823,11 @@ function openSms(propId, kind) {
   const phone = getPhone(propId);
   if (!phone) {
     showToast('관리자 번호가 등록되지 않았습니다.', 'error');
-    openPhone(propId);
+    openPropConfig(propId);
     return;
   }
-  const tpl = kind === 'checkin' ? smsTemplates.checkin : smsTemplates.checkout;
+  // 숙소별 문구 우선, 없으면 기본 템플릿
+  const tpl = getPropMessage(propId, kind);
   const msg = tpl.replace(/\{숙소명\}/g, displayName(p));
 
   smsPending = { propId, kind };
