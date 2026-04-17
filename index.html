@@ -411,6 +411,103 @@
       .briefing-bottom { grid-template-columns: 1fr; gap: 1rem; }
     }
 
+    /* ══ SMS BUTTON IN BRIEFING ══ */
+    .briefing-item {
+      display: flex; align-items: center; gap: .5rem;
+      font-family: 'Pretendard', sans-serif; font-size: .84rem; color: var(--text);
+      padding: .35rem 0;
+      justify-content: space-between;
+    }
+    .briefing-item-left {
+      display: flex; align-items: center; gap: .5rem; min-width: 0; flex: 1;
+    }
+    .briefing-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sms-btn {
+      background: transparent; border: 1px solid var(--border); border-radius: .45rem;
+      color: var(--subtle); cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: .7rem; font-weight: 600;
+      padding: .3rem .65rem; transition: all .2s;
+      display: inline-flex; align-items: center; gap: .3rem;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .sms-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .sms-btn.no-number { opacity: .55; }
+    .sms-btn.no-number:hover { border-color: var(--red); color: var(--red); }
+
+    /* ══ SETTINGS BUTTON in header ══ */
+    .settings-btn {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 50%; width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--subtle); cursor: pointer; transition: all .2s;
+    }
+    .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ══ SMS PREVIEW / SETTINGS MODAL ══ */
+    .generic-overlay {
+      position: fixed; inset: 0; z-index: 260; background: rgba(0,0,0,.65);
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .generic-overlay.open { display: flex; }
+    .generic-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 1.25rem; padding: 2rem; width: min(460px, 92vw);
+      animation: fadeUp .3s ease both;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .generic-title {
+      font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+      font-size: 1.15rem; font-weight: 700; margin-bottom: .4rem;
+    }
+    .generic-sub {
+      font-family: 'Pretendard', sans-serif;
+      color: var(--subtle); font-size: .78rem; margin-bottom: 1.2rem;
+    }
+    .generic-field {
+      margin-bottom: 1rem;
+    }
+    .generic-field label {
+      display: block; font-family: 'Pretendard', sans-serif;
+      font-size: .72rem; font-weight: 600; color: var(--subtle);
+      margin-bottom: .35rem;
+    }
+    .generic-input, .generic-textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--border);
+      border-radius: .55rem; padding: .65rem .9rem;
+      color: var(--text); font-family: 'Pretendard', sans-serif; font-size: .88rem;
+      outline: none; transition: border-color .2s;
+    }
+    .generic-input:focus, .generic-textarea:focus { border-color: var(--accent); }
+    .generic-textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+    .generic-hint {
+      font-family: 'Pretendard', sans-serif; font-size: .7rem;
+      color: var(--muted); margin-top: .35rem; line-height: 1.5;
+    }
+    .generic-btns {
+      display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.25rem;
+    }
+    .generic-cancel {
+      padding: .6rem 1.15rem; border-radius: .55rem; border: 1px solid var(--border);
+      background: transparent; color: var(--subtle); cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: .8rem; transition: border-color .2s;
+    }
+    .generic-cancel:hover { border-color: var(--muted); color: var(--text); }
+    .generic-ok {
+      padding: .6rem 1.15rem; border-radius: .55rem; border: none;
+      background: var(--accent); color: var(--bg); cursor: pointer;
+      font-family: 'Pretendard', sans-serif; font-size: .8rem; font-weight: 700;
+      transition: opacity .2s;
+    }
+    .generic-ok:hover { opacity: .85; }
+
+    /* prop card phone indicator */
+    .prop-phone-badge {
+      font-family: 'DM Mono', monospace; font-size: .66rem;
+      color: var(--subtle);
+    }
+    .prop-phone-badge.empty { color: var(--muted); opacity: .7; }
+
     /* ══ RENAME MODAL ══ */
     #rename-overlay {
       position: fixed; inset: 0; z-index: 250; background: rgba(0,0,0,.65);
@@ -605,6 +702,12 @@
         <div id="user-avatar-wrap"></div>
         <button class="logout-btn" onclick="handleLogout()" title="로그아웃">✕</button>
       </div>
+      <button class="settings-btn" onclick="openSettings()" title="문자 문구 설정">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -667,6 +770,10 @@
             </div>
             <button class="add-btn" onclick="addProperty()">등록</button>
           </div>
+          <div class="field" style="margin-top:.75rem;">
+            <label>관리자 번호 (선택)</label>
+            <input type="tel" id="new-phone" placeholder="예) 010-1234-5678" />
+          </div>
           <div class="ical-hint">
             💡 &nbsp;iCal 링크 찾는 법: <strong>에어비앤비 → 숙소 → 캘린더 → 가용성 설정 → iCal 내보내기</strong>
           </div>
@@ -712,6 +819,64 @@
 </div>
 
 <!-- ═══════ CONFIRM DIALOG ═══════ -->
+<!-- SMS 미리보기 -->
+<div id="sms-overlay" class="generic-overlay">
+  <div class="generic-box">
+    <div class="generic-title">문자 보내기</div>
+    <p class="generic-sub" id="sms-sub"></p>
+    <div class="generic-field">
+      <label>수신자</label>
+      <input type="tel" class="generic-input" id="sms-to" />
+    </div>
+    <div class="generic-field">
+      <label>메시지</label>
+      <textarea class="generic-textarea" id="sms-body"></textarea>
+      <div class="generic-hint">전송하기를 누르면 문자 앱이 열립니다. 최종 전송은 직접 해주세요.</div>
+    </div>
+    <div class="generic-btns">
+      <button class="generic-cancel" onclick="closeSms()">취소</button>
+      <button class="generic-ok" onclick="doSendSms()">전송하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 설정 모달 (문자 템플릿) -->
+<div id="settings-overlay" class="generic-overlay">
+  <div class="generic-box">
+    <div class="generic-title">문자 문구 설정</div>
+    <p class="generic-sub"><code>{숙소명}</code> 을 쓰면 숙소 이름으로 자동 치환됩니다.</p>
+    <div class="generic-field">
+      <label>체크인 문구</label>
+      <textarea class="generic-textarea" id="tpl-checkin"></textarea>
+    </div>
+    <div class="generic-field">
+      <label>체크아웃 문구</label>
+      <textarea class="generic-textarea" id="tpl-checkout"></textarea>
+    </div>
+    <div class="generic-btns">
+      <button class="generic-cancel" onclick="closeSettings()">취소</button>
+      <button class="generic-ok" onclick="saveSettings()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 숙소 번호 편집 모달 -->
+<div id="phone-overlay" class="generic-overlay">
+  <div class="generic-box">
+    <div class="generic-title">관리자 번호 설정</div>
+    <p class="generic-sub" id="phone-sub"></p>
+    <div class="generic-field">
+      <label>관리자 전화번호</label>
+      <input type="tel" class="generic-input" id="phone-input" placeholder="예) 010-1234-5678" />
+      <div class="generic-hint">문자 보내기 버튼을 눌렀을 때 이 번호로 문자 앱이 열립니다.</div>
+    </div>
+    <div class="generic-btns">
+      <button class="generic-cancel" onclick="closePhone()">취소</button>
+      <button class="generic-ok" onclick="savePhone()">저장</button>
+    </div>
+  </div>
+</div>
+
 <div id="rename-overlay">
   <div class="rename-box">
     <div class="rename-title font-display">숙소 이름 변경</div>
@@ -751,12 +916,21 @@ let syncingIds = new Set();
 let addPanelOpen = false;
 let pendingDeleteId = null;
 let propNicknames = {};    // { property_id: '별칭' }
+let propPhones = {};       // { property_id: '010-...' }
+let smsTemplates = {
+  checkin:  '[{숙소명}] 오늘 체크인 예정입니다. 청소 완료 확인 부탁드립니다.',
+  checkout: '[{숙소명}] 오늘 체크아웃입니다. 청소 진행 부탁드립니다.'
+};
 let calYear, calMonth;     // 달력 현재 표시 연/월
 let renamingId = null;
+let phoneEditingId = null;
+let smsPending = null;     // { phone, message }
 
 /* ══ STORAGE (localStorage — 브라우저에서 실행 시 사용) ══ */
 function storageKey() { return `stays_props_${user?.email || 'guest'}`; }
 function nicknameKey() { return `stays_names_${user?.email || 'guest'}`; }
+function phoneKey()    { return `stays_phones_${user?.email || 'guest'}`; }
+function tplKey()      { return `stays_tpl_${user?.email || 'guest'}`; }
 
 function saveProps() {
   localStorage.setItem(storageKey(), JSON.stringify(properties));
@@ -770,8 +944,32 @@ function loadNicknames() {
     propNicknames = raw ? JSON.parse(raw) : {};
   } catch { propNicknames = {}; }
 }
+function savePhones() {
+  localStorage.setItem(phoneKey(), JSON.stringify(propPhones));
+}
+function loadPhones() {
+  try {
+    const raw = localStorage.getItem(phoneKey());
+    propPhones = raw ? JSON.parse(raw) : {};
+  } catch { propPhones = {}; }
+}
+function saveTemplates() {
+  localStorage.setItem(tplKey(), JSON.stringify(smsTemplates));
+}
+function loadTemplates() {
+  try {
+    const raw = localStorage.getItem(tplKey());
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      smsTemplates = { ...smsTemplates, ...parsed };
+    }
+  } catch {}
+}
 function displayName(p) {
   return propNicknames[p.property_id] || p.name;
+}
+function getPhone(propId) {
+  return propPhones[propId] || '';
 }
 
 async function loadProps() {
@@ -897,6 +1095,8 @@ async function onLoggedIn() {
 
   initDateDefaults();
   loadNicknames();
+  loadPhones();
+  loadTemplates();
   renderBriefingDate();
   loadWeather();
   await loadProps(); // 로컬 즉시 렌더 → 백그라운드 서버 갱신
@@ -941,8 +1141,9 @@ function toggleAddPanel() {
 
 /* ══ ADD PROPERTY ══ */
 async function addProperty() {
-  const name = $('new-name').value.trim();
-  const url  = $('new-ical').value.trim();
+  const name  = $('new-name').value.trim();
+  const url   = $('new-ical').value.trim();
+  const phone = ($('new-phone') ? $('new-phone').value.trim() : '');
 
   if (!name) { showToast('숙소 이름을 입력해주세요.', 'error'); return; }
   if (!url)  { showToast('iCal URL을 입력해주세요.', 'error'); return; }
@@ -971,12 +1172,19 @@ async function addProperty() {
     console.warn('백엔드 미연결, 로컬 저장:', e.message);
   }
 
+  // 관리자 번호 저장 (있으면)
+  if (phone) {
+    propPhones[newProp.property_id] = phone;
+    savePhones();
+  }
+
   properties.unshift(newProp);
   saveProps();
   renderProperties();
 
   $('new-name').value = '';
   $('new-ical').value = '';
+  if ($('new-phone')) $('new-phone').value = '';
   if (addPanelOpen) toggleAddPanel();
   showToast(`"${name}" 등록 완료`, 'success');
 }
@@ -1086,11 +1294,22 @@ function renderProperties() {
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
             </button>
+            <button class="edit-name-btn" onclick="openPhone('${safeId}')" title="관리자 번호">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </button>
           </div>
           <div class="prop-meta">
             <div class="prop-meta-row">
               <span class="prop-meta-dot"></span>
               <span>동기화: ${fmtSynced(p.last_synced)}</span>
+            </div>
+            <div class="prop-meta-row">
+              <span class="prop-meta-dot"></span>
+              <span class="prop-phone-badge ${getPhone(p.property_id)?'':'empty'}">
+                ${getPhone(p.property_id) ? '📱 ' + escHtml(getPhone(p.property_id)) : '📱 관리자 번호 미등록'}
+              </span>
             </div>
             <div class="prop-meta-row" style="max-width:240px; overflow:hidden;">
               <span class="prop-meta-dot"></span>
@@ -1408,20 +1627,37 @@ function renderTodayBookings() {
     (p.bookings || []).forEach(b => {
       const s = new Date(b.start); s.setHours(0,0,0,0);
       const e = new Date(b.end);   e.setHours(0,0,0,0);
-      if (s.getTime() === t) checkins.push({ name: displayName(p), color });
-      if (e.getTime() === t) checkouts.push({ name: displayName(p), color });
+      if (s.getTime() === t) checkins.push({ id: p.property_id, name: displayName(p), color });
+      if (e.getTime() === t) checkouts.push({ id: p.property_id, name: displayName(p), color });
     });
   });
 
   $('brief-in-count').textContent  = checkins.length;
   $('brief-out-count').textContent = checkouts.length;
 
+  function itemHtml(item, kind) {
+    const hasPhone = !!getPhone(item.id);
+    return `
+      <div class="briefing-item">
+        <div class="briefing-item-left">
+          <span class="briefing-item-dot" style="background:${item.color.text};"></span>
+          <span class="briefing-item-name">${escHtml(item.name)}</span>
+        </div>
+        <button class="sms-btn ${hasPhone?'':'no-number'}" onclick="openSms('${escHtml(item.id)}','${kind}')" title="${hasPhone?'문자 보내기':'번호 미등록'}">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          문자
+        </button>
+      </div>`;
+  }
+
   $('brief-checkin').innerHTML  = checkins.length
-    ? checkins.map(c => `<div class="briefing-item"><span class="briefing-item-dot" style="background:${c.color.text};"></span>${escHtml(c.name)}</div>`).join('')
+    ? checkins.map(c => itemHtml(c, 'checkin')).join('')
     : `<div class="briefing-empty">오늘 체크인 없음</div>`;
 
   $('brief-checkout').innerHTML = checkouts.length
-    ? checkouts.map(c => `<div class="briefing-item"><span class="briefing-item-dot" style="background:${c.color.text};"></span>${escHtml(c.name)}</div>`).join('')
+    ? checkouts.map(c => itemHtml(c, 'checkout')).join('')
     : `<div class="briefing-empty">오늘 체크아웃 없음</div>`;
 }
 
@@ -1479,6 +1715,94 @@ function loadWeather() {
       fetchWeather(FALLBACK.lat, FALLBACK.lon, FALLBACK.name);
     }
   });
+}
+
+/* ══ SMS / PHONE / SETTINGS ══ */
+function openPhone(id) {
+  phoneEditingId = id;
+  const p = properties.find(p => p.property_id === id);
+  $('phone-sub').textContent = p ? `"${displayName(p)}" 관리자 번호를 입력하세요.` : '';
+  $('phone-input').value = getPhone(id);
+  $('phone-overlay').classList.add('open');
+  setTimeout(() => $('phone-input').focus(), 80);
+}
+function closePhone() {
+  phoneEditingId = null;
+  $('phone-overlay').classList.remove('open');
+}
+function savePhone() {
+  if (!phoneEditingId) return closePhone();
+  const val = $('phone-input').value.trim();
+  if (val) {
+    propPhones[phoneEditingId] = val;
+  } else {
+    delete propPhones[phoneEditingId];
+  }
+  savePhones();
+  renderProperties();
+  showToast(val ? '관리자 번호가 저장됐습니다.' : '관리자 번호가 삭제됐습니다.', 'success');
+  closePhone();
+}
+
+function openSettings() {
+  $('tpl-checkin').value  = smsTemplates.checkin;
+  $('tpl-checkout').value = smsTemplates.checkout;
+  $('settings-overlay').classList.add('open');
+}
+function closeSettings() {
+  $('settings-overlay').classList.remove('open');
+}
+function saveSettings() {
+  const ci = $('tpl-checkin').value.trim();
+  const co = $('tpl-checkout').value.trim();
+  if (!ci || !co) { showToast('문구를 모두 입력해주세요.', 'error'); return; }
+  smsTemplates.checkin  = ci;
+  smsTemplates.checkout = co;
+  saveTemplates();
+  showToast('문자 문구가 저장됐습니다.', 'success');
+  closeSettings();
+  renderTodayBookings();
+}
+
+function openSms(propId, kind) {
+  const p = properties.find(p => p.property_id === propId);
+  if (!p) return;
+  const phone = getPhone(propId);
+  if (!phone) {
+    showToast('관리자 번호가 등록되지 않았습니다.', 'error');
+    openPhone(propId);
+    return;
+  }
+  const tpl = kind === 'checkin' ? smsTemplates.checkin : smsTemplates.checkout;
+  const msg = tpl.replace(/\{숙소명\}/g, displayName(p));
+
+  smsPending = { propId, kind };
+  $('sms-sub').textContent = `${kind === 'checkin' ? '체크인' : '체크아웃'} · ${displayName(p)}`;
+  $('sms-to').value   = phone;
+  $('sms-body').value = msg;
+  $('sms-overlay').classList.add('open');
+}
+function closeSms() {
+  smsPending = null;
+  $('sms-overlay').classList.remove('open');
+}
+function doSendSms() {
+  const to   = $('sms-to').value.trim().replace(/[^\d+]/g, '');
+  const body = $('sms-body').value.trim();
+  if (!to)   { showToast('수신 번호를 입력해주세요.', 'error'); return; }
+  if (!body) { showToast('메시지를 입력해주세요.', 'error'); return; }
+
+  // sms: 링크로 기본 문자 앱 열기 (iOS/Android 모두 지원)
+  const encoded = encodeURIComponent(body);
+  const sep = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? '&' : '?';
+  const href = `sms:${to}${sep}body=${encoded}`;
+
+  const a = document.createElement('a');
+  a.href = href;
+  a.click();
+
+  showToast('문자 앱을 여는 중…', 'success');
+  closeSms();
 }
 
 /* ══ INIT ══ */
