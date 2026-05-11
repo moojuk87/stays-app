@@ -26,6 +26,65 @@ TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.stays_db
 
+# ── Gemini 모델명 (시작 시 자동 선택, 기본값 fallback)
+GEMINI_MODEL = "gemini-2.5-flash"
+
+# Gemini fallback 우선순위 목록 (자동 선택 실패 시 순서대로 시도)
+GEMINI_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+
+async def auto_select_gemini_model() -> str:
+    """Gemini API 모델 목록 조회 → stable flash 자동 선택
+    실패 시 GEMINI_FALLBACKS 순서로 fallback"""
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
+        async with httpx.AsyncClient() as c:
+            resp = await c.get(url, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+
+        # generateContent 지원 + flash 계열 + 텍스트 전용 모델만 필터링
+        flash_models = [
+            m["name"].replace("models/", "")
+            for m in data.get("models", [])
+            if "flash" in m["name"].lower()
+            and "generateContent" in m.get("supportedGenerationMethods", [])
+            and "tts"   not in m["name"].lower()
+            and "image" not in m["name"].lower()
+            and "audio" not in m["name"].lower()
+            and "live"  not in m["name"].lower()
+        ]
+
+        if not flash_models:
+            raise ValueError("flash 모델 없음")
+
+        # 1순위: preview/lite/8b 없는 stable 버전
+        stable = sorted(
+            [m for m in flash_models if "preview" not in m and "lite" not in m and "8b" not in m],
+            reverse=True
+        )
+        if stable:
+            print(f"[Gemini] stable 모델 선택: {stable[0]}")
+            return stable[0]
+
+        # 2순위: preview 없는 것 (lite 허용)
+        non_preview = sorted(
+            [m for m in flash_models if "preview" not in m],
+            reverse=True
+        )
+        if non_preview:
+            print(f"[Gemini] non-preview 모델 선택: {non_preview[0]}")
+            return non_preview[0]
+
+        # 3순위: 있는 것 중 최신
+        best = sorted(flash_models, reverse=True)[0]
+        print(f"[Gemini] 모델 선택 (fallback): {best}")
+        return best
+
+    except Exception as e:
+        print(f"[Gemini] 모델 조회 실패 ({e}), fallback: {GEMINI_FALLBACKS[0]}")
+
+    return GEMINI_FALLBACKS[0]
+
 
 # ─────────────────────────────────────────
 #  텔레그램 유틸
@@ -69,15 +128,28 @@ datetime이 불명확하면 null로 설정하세요.
         "contents": [{"parts": parts}],
         "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1000}
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key={GEMINI_API_KEY}"
-    async with httpx.AsyncClient() as c:
-        resp = await c.post(url, json=payload, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
+    # 선택된 모델부터 시도, 실패 시 fallback 순서대로 재시도
+    models_to_try = [GEMINI_MODEL] + [m for m in GEMINI_FALLBACKS if m != GEMINI_MODEL]
+    last_error = None
 
-    raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-    raw = raw.replace("```json", "").replace("```", "").strip()
-    return json.loads(raw)
+    for model in models_to_try:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
+            async with httpx.AsyncClient() as c:
+                resp = await c.post(url, json=payload, timeout=30)
+                resp.raise_for_status()
+                data = resp.json()
+
+            raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            return json.loads(raw)
+
+        except Exception as e:
+            print(f"[Gemini] {model} 실패: {e}")
+            last_error = e
+            continue
+
+    raise last_error
 
 
 # ─────────────────────────────────────────
@@ -150,6 +222,8 @@ async def check_reminders():
 # ─────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global GEMINI_MODEL
+    GEMINI_MODEL = await auto_select_gemini_model()
     scheduler.add_job(check_reminders, "interval", minutes=10, id="reminders")
     scheduler.start()
     yield
