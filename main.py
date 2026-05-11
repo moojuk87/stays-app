@@ -27,10 +27,10 @@ client = AsyncIOMotorClient(MONGO_URL)
 db = client.stays_db
 
 # ── Gemini 모델명 (시작 시 자동 선택, 기본값 fallback)
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-2.5-flash-lite"
 
 # Gemini fallback 우선순위 목록 (자동 선택 실패 시 순서대로 시도)
-GEMINI_FALLBACKS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+GEMINI_FALLBACKS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"]
 
 async def auto_select_gemini_model() -> str:
     """Gemini API 모델 목록 조회 → stable flash 자동 선택
@@ -126,7 +126,7 @@ datetime이 불명확하면 null로 설정하세요.
 
     payload = {
         "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1000}
+        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1000, "thinkingConfig": {"thinkingBudget": 0}}
     }
     # 선택된 모델부터 시도, 실패 시 fallback 순서대로 재시도
     models_to_try = [GEMINI_MODEL] + [m for m in GEMINI_FALLBACKS if m != GEMINI_MODEL]
