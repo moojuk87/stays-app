@@ -69,7 +69,7 @@ datetime이 불명확하면 null로 설정하세요.
         "contents": [{"parts": parts}],
         "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1000}
     }
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-latest:generateContent?key={GEMINI_API_KEY}"
     async with httpx.AsyncClient() as c:
         resp = await c.post(url, json=payload, timeout=30)
         resp.raise_for_status()
