@@ -4,3 +4,5 @@ motor
 aiohttp
 icalendar
 pydantic
+apscheduler
+httpx

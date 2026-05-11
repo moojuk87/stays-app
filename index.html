@@ -678,6 +678,66 @@
       .user-name { display: none; }
       .cal-bar { font-size: .58rem; }
     }
+
+    /* ══ SCHEDULES ══ */
+    .sched-filter-btn {
+      font-family: 'Pretendard', 'DM Mono', monospace; font-size: .72rem; font-weight: 700;
+      letter-spacing: .05em; text-transform: uppercase;
+      padding: .35rem 1rem; border-radius: 9999px; border: 1px solid var(--border);
+      background: transparent; color: var(--subtle); cursor: pointer; transition: all .2s;
+    }
+    .sched-filter-btn.active { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .sched-filter-btn:not(.active):hover { color: var(--text); border-color: var(--muted); }
+
+    .sched-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: .85rem; padding: .85rem 1.1rem;
+      display: flex; align-items: flex-start; gap: .85rem;
+      transition: border-color .2s, transform .2s;
+      margin-bottom: .6rem;
+    }
+    .sched-card:hover { border-color: var(--muted); transform: translateY(-1px); }
+    .sched-card.done  { opacity: .5; }
+
+    .sched-check {
+      width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 2px;
+      border: 2px solid var(--border); background: transparent; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all .2s;
+    }
+    .sched-check:hover { border-color: var(--accent); }
+    .sched-check.checked { background: var(--accent); border-color: var(--accent); }
+
+    .sched-body { flex: 1; min-width: 0; }
+    .sched-title {
+      font-family: 'Pretendard', sans-serif; font-size: .95rem; font-weight: 700;
+      color: var(--text); margin-bottom: .25rem;
+    }
+    .sched-card.done .sched-title { text-decoration: line-through; color: var(--subtle); }
+    .sched-meta {
+      font-family: 'DM Mono', monospace; font-size: .7rem; color: var(--subtle);
+      display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
+    }
+    .sched-date-badge {
+      background: rgba(201,169,110,.1); color: var(--accent);
+      border: 1px solid rgba(201,169,110,.2);
+      border-radius: .35rem; padding: .1rem .55rem;
+      font-family: 'DM Mono', monospace; font-size: .68rem; font-weight: 500;
+    }
+    .sched-memo { color: var(--muted); font-size: .68rem; }
+    .sched-del-btn {
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      padding: .2rem; border-radius: .3rem; transition: color .2s; flex-shrink: 0;
+    }
+    .sched-del-btn:hover { color: var(--red); }
+
+    .sched-date-group {
+      font-family: 'Pretendard', sans-serif; font-size: .75rem; font-weight: 700;
+      color: var(--subtle); letter-spacing: .04em;
+      padding: .5rem 0 .4rem; margin-top: .75rem;
+      border-bottom: 1px solid var(--border); margin-bottom: .5rem;
+    }
+    .sched-date-group:first-child { margin-top: 0; }
+
   </style>
 </head>
 <body>
@@ -719,6 +779,7 @@
       <nav>
         <button class="nav-btn active" id="btn-dashboard" onclick="switchTab('dashboard')">Dashboard</button>
         <button class="nav-btn"        id="btn-search"    onclick="switchTab('search')">Availability</button>
+        <button class="nav-btn"        id="btn-schedules" onclick="switchTab('schedules')">Schedules</button>
       </nav>
       <div class="user-pill">
         <span class="user-name" id="user-name-el"></span>
@@ -818,6 +879,56 @@
         <div id="cal-body"></div>
         <div class="cal-legend" id="cal-legend"></div>
       </div>
+    </section>
+
+
+    <!-- ─── SCHEDULES ─── -->
+    <section id="view-schedules" style="display:none;">
+      <h1 class="section-title font-display">일정 & 할일</h1>
+      <p class="section-sub">텔레그램 봇으로 보내거나 직접 등록하세요. 정해진 타이밍에 자동으로 알림을 드립니다.</p>
+
+      <!-- 직접 등록 패널 -->
+      <div class="add-panel" id="sched-add-panel">
+        <div class="add-panel-header" id="sched-add-hdr" onclick="toggleSchedPanel()">
+          <div class="add-panel-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            직접 등록
+          </div>
+          <svg id="sched-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--subtle)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="add-panel-body" id="sched-add-body">
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:.75rem; margin-bottom:.75rem;">
+            <div class="field">
+              <label>제목</label>
+              <input type="text" id="sched-title" placeholder="예) 광안채 에어컨 점검" />
+            </div>
+            <div class="field">
+              <label>날짜 / 시간</label>
+              <input type="datetime-local" id="sched-datetime" />
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr auto; gap:.75rem; align-items:end;">
+            <div class="field">
+              <label>메모 (선택)</label>
+              <input type="text" id="sched-memo" placeholder="추가 내용" />
+            </div>
+            <button class="add-btn" onclick="addSchedule()">등록</button>
+          </div>
+          <div class="ical-hint" style="margin-top:.85rem;">
+            💡 &nbsp;텔레그램 봇으로 카톡 내용이나 캡처 이미지를 보내면 자동으로 여기에 등록됩니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- 필터 -->
+      <div style="display:flex; gap:.5rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+        <button class="sched-filter-btn active" id="filter-all"      onclick="setSchedFilter('all')">전체</button>
+        <button class="sched-filter-btn"        id="filter-upcoming" onclick="setSchedFilter('upcoming')">예정</button>
+        <button class="sched-filter-btn"        id="filter-done"     onclick="setSchedFilter('done')">완료</button>
+      </div>
+
+      <!-- 목록 -->
+      <div id="schedules-list"></div>
     </section>
 
     <!-- ─── SEARCH ─── -->
@@ -1171,10 +1282,12 @@ function handleLogout() {
 
 /* ══ TAB ══ */
 function switchTab(tab) {
-  $('view-dashboard').style.display = tab === 'dashboard' ? '' : 'none';
-  $('view-search').style.display    = tab === 'search'    ? '' : 'none';
+  $('view-dashboard').style.display  = tab === 'dashboard'  ? '' : 'none';
+  $('view-search').style.display     = tab === 'search'     ? '' : 'none';
+  $('view-schedules').style.display  = tab === 'schedules'  ? '' : 'none';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   $(`btn-${tab}`).classList.add('active');
+  if (tab === 'schedules') loadSchedules();
 }
 
 /* ══ ADD PANEL ══ */
@@ -1871,6 +1984,184 @@ function initDateDefaults() {
   if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') { document.getElementById('client-id-notice').style.display = 'block'; }
   if (restoreSession()) onLoggedIn();
 })();
+
+
+/* ══ SCHEDULES ══ */
+let schedules = [];
+let schedPanelOpen = false;
+let schedFilter = 'all';
+
+function toggleSchedPanel() {
+  schedPanelOpen = !schedPanelOpen;
+  const body = $('sched-add-body');
+  const hdr  = $('sched-add-hdr');
+  body.className = 'add-panel-body' + (schedPanelOpen ? ' open' : '');
+  hdr.className  = 'add-panel-header' + (schedPanelOpen ? ' open' : '');
+  $('sched-chevron').style.transform = schedPanelOpen ? 'rotate(180deg)' : '';
+}
+
+function setSchedFilter(f) {
+  schedFilter = f;
+  document.querySelectorAll('.sched-filter-btn').forEach(b => b.classList.remove('active'));
+  $(`filter-${f}`).classList.add('active');
+  renderSchedules();
+}
+
+async function loadSchedules() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/schedules`);
+    if (res.ok) {
+      schedules = await res.json();
+      renderSchedules();
+    }
+  } catch(e) {
+    console.warn('일정 로드 실패:', e.message);
+  }
+}
+
+async function addSchedule() {
+  const title = $('sched-title').value.trim();
+  const dt    = $('sched-datetime').value;
+  const memo  = $('sched-memo').value.trim();
+  if (!title) { showToast('제목을 입력해주세요.', 'error'); return; }
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/schedules`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, datetime: dt || null, memo })
+    });
+    if (!res.ok) throw new Error('등록 실패');
+    const saved = await res.json();
+    schedules.unshift(saved);
+    renderSchedules();
+    $('sched-title').value = '';
+    $('sched-datetime').value = '';
+    $('sched-memo').value = '';
+    if (schedPanelOpen) toggleSchedPanel();
+    showToast(`"${title}" 등록됐습니다.`, 'success');
+  } catch(e) {
+    showToast('등록에 실패했습니다.', 'error');
+  }
+}
+
+async function toggleSchedDone(id) {
+  const sched = schedules.find(s => s.id === id);
+  if (!sched) return;
+  const endpoint = sched.done ? 'undone' : 'done';
+  try {
+    const res = await fetch(`${BASE_URL}/api/schedules/${id}/${endpoint}`, { method: 'PUT' });
+    if (res.ok) {
+      sched.done = !sched.done;
+      renderSchedules();
+    }
+  } catch(e) {
+    showToast('업데이트 실패', 'error');
+  }
+}
+
+async function deleteSchedule(id) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/schedules/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      schedules = schedules.filter(s => s.id !== id);
+      renderSchedules();
+      showToast('삭제됐습니다.', 'success');
+    }
+  } catch(e) {
+    showToast('삭제 실패', 'error');
+  }
+}
+
+function fmtSchedDate(dt_str) {
+  if (!dt_str) return null;
+  try {
+    const d = new Date(dt_str);
+    const now = new Date();
+    const today = new Date(); today.setHours(0,0,0,0);
+    const target = new Date(d); target.setHours(0,0,0,0);
+    const diffDays = Math.round((target - today) / 86400000);
+    const timeStr = d.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+    const dateStr = d.toLocaleDateString('ko-KR', { month:'short', day:'numeric', weekday:'short' });
+    if (diffDays === 0) return `오늘 ${timeStr}`;
+    if (diffDays === 1) return `내일 ${timeStr}`;
+    if (diffDays === -1) return `어제 ${timeStr}`;
+    return `${dateStr} ${timeStr}`;
+  } catch { return dt_str; }
+}
+
+function groupDateLabel(dt_str) {
+  if (!dt_str) return '날짜 미정';
+  try {
+    const d = new Date(dt_str);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const target = new Date(d); target.setHours(0,0,0,0);
+    const diffDays = Math.round((target - today) / 86400000);
+    if (diffDays === 0) return '오늘';
+    if (diffDays === 1) return '내일';
+    if (diffDays < 0) return '지난 일정';
+    return d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
+  } catch { return '날짜 미정'; }
+}
+
+function renderSchedules() {
+  const el = $('schedules-list');
+  if (!el) return;
+
+  let filtered = schedules;
+  if (schedFilter === 'upcoming') filtered = schedules.filter(s => !s.done);
+  if (schedFilter === 'done')     filtered = schedules.filter(s => s.done);
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>일정이 없습니다.</p></div>`;
+    return;
+  }
+
+  // 날짜별 그룹핑
+  const groups = {};
+  filtered.forEach(s => {
+    const key = s.datetime ? s.datetime.slice(0, 10) : 'none';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    if (a === 'none') return 1;
+    if (b === 'none') return -1;
+    return a.localeCompare(b);
+  });
+
+  let html = '';
+  sortedKeys.forEach(key => {
+    const label = key === 'none' ? '날짜 미정' : groupDateLabel(groups[key][0].datetime);
+    html += `<div class="sched-date-group">${escHtml(label)}</div>`;
+    groups[key].forEach(s => {
+      const dtLabel = fmtSchedDate(s.datetime);
+      html += `
+      <div class="sched-card ${s.done ? 'done' : ''} fade-up">
+        <button class="sched-check ${s.done ? 'checked' : ''}" onclick="toggleSchedDone('${s.id}')" title="${s.done ? '완료 취소' : '완료 처리'}">
+          ${s.done ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+        </button>
+        <div class="sched-body">
+          <div class="sched-title">${escHtml(s.title)}</div>
+          <div class="sched-meta">
+            ${dtLabel ? `<span class="sched-date-badge">${escHtml(dtLabel)}</span>` : ''}
+            ${s.memo ? `<span class="sched-memo">📝 ${escHtml(s.memo)}</span>` : ''}
+          </div>
+        </div>
+        <button class="sched-del-btn" onclick="deleteSchedule('${s.id}')" title="삭제">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+          </svg>
+        </button>
+      </div>`;
+    });
+  });
+
+  el.innerHTML = html;
+}
+
 </script>
 </body>
 </html>
