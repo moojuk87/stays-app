@@ -145,7 +145,12 @@ datetime이 불명확하면 null로 설정하세요.
             return json.loads(raw)
 
         except Exception as e:
-            print(f"[Gemini] {model} 실패: {e}")
+            # 400 에러 본문 출력 (정확한 원인 파악용)
+            try:
+                err_body = e.response.text if hasattr(e, 'response') else str(e)
+                print(f"[Gemini] {model} 실패: {e} | 본문: {err_body[:200]}")
+            except:
+                print(f"[Gemini] {model} 실패: {e}")
             last_error = e
             continue
 
