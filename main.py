@@ -18,7 +18,7 @@ import base64
 MONGO_URL          = os.environ.get("MONGO_URL")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = os.environ.get("TELEGRAM_CHAT_ID")
-GEMINI_API_KEY     = os.environ.get("GEMINI_API_KEY")
+GROQ_API_KEY       = os.environ.get("GROQ_API_KEY")
 
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
@@ -26,64 +26,10 @@ TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 client = AsyncIOMotorClient(MONGO_URL)
 db = client.stays_db
 
-# ── Gemini 모델명 (시작 시 자동 선택, 기본값 fallback)
-GEMINI_MODEL = "gemini-2.5-flash-lite"
-
-# Gemini fallback 우선순위 목록 (자동 선택 실패 시 순서대로 시도)
-GEMINI_FALLBACKS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash"]
-
-async def auto_select_gemini_model() -> str:
-    """Gemini API 모델 목록 조회 → stable flash 자동 선택
-    실패 시 GEMINI_FALLBACKS 순서로 fallback"""
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
-        async with httpx.AsyncClient() as c:
-            resp = await c.get(url, timeout=10)
-            resp.raise_for_status()
-            data = resp.json()
-
-        # generateContent 지원 + flash 계열 + 텍스트 전용 모델만 필터링
-        flash_models = [
-            m["name"].replace("models/", "")
-            for m in data.get("models", [])
-            if "flash" in m["name"].lower()
-            and "generateContent" in m.get("supportedGenerationMethods", [])
-            and "tts"   not in m["name"].lower()
-            and "image" not in m["name"].lower()
-            and "audio" not in m["name"].lower()
-            and "live"  not in m["name"].lower()
-        ]
-
-        if not flash_models:
-            raise ValueError("flash 모델 없음")
-
-        # 1순위: preview/lite/8b 없는 stable 버전
-        stable = sorted(
-            [m for m in flash_models if "preview" not in m and "lite" not in m and "8b" not in m],
-            reverse=True
-        )
-        if stable:
-            print(f"[Gemini] stable 모델 선택: {stable[0]}")
-            return stable[0]
-
-        # 2순위: preview 없는 것 (lite 허용)
-        non_preview = sorted(
-            [m for m in flash_models if "preview" not in m],
-            reverse=True
-        )
-        if non_preview:
-            print(f"[Gemini] non-preview 모델 선택: {non_preview[0]}")
-            return non_preview[0]
-
-        # 3순위: 있는 것 중 최신
-        best = sorted(flash_models, reverse=True)[0]
-        print(f"[Gemini] 모델 선택 (fallback): {best}")
-        return best
-
-    except Exception as e:
-        print(f"[Gemini] 모델 조회 실패 ({e}), fallback: {GEMINI_FALLBACKS[0]}")
-
-    return GEMINI_FALLBACKS[0]
+# ── Groq 설정
+GROQ_API_URL        = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_TEXT_MODEL     = "llama-3.3-70b-versatile"
+GROQ_VISION_MODEL   = "llama-3.2-11b-vision-preview"
 
 
 # ─────────────────────────────────────────
@@ -98,9 +44,9 @@ async def send_telegram(text: str, reply_markup=None):
 
 
 # ─────────────────────────────────────────
-#  Gemini 파싱
+#  Groq 파싱
 # ─────────────────────────────────────────
-async def parse_with_gemini(text: str = None, image_bytes: bytes = None, image_mime: str = None) -> list:
+async def parse_with_groq(text: str = None, image_bytes: bytes = None, image_mime: str = None) -> list:
     kst = timezone(timedelta(hours=9))
     today_str = datetime.now(kst).strftime("%Y-%m-%d")
 
@@ -115,46 +61,49 @@ async def parse_with_gemini(text: str = None, image_bytes: bytes = None, image_m
 datetime이 불명확하면 null로 설정하세요.
 일정이 없으면 빈 배열 []을 반환하세요."""
 
-    parts = [{"text": system_prompt}]
     if image_bytes:
-        parts.append({"inline_data": {
-            "mime_type": image_mime or "image/jpeg",
-            "data": base64.b64encode(image_bytes).decode()
-        }})
-    if text:
-        parts.append({"text": f"\n추출 대상:\n{text}"})
+        # 이미지: vision 모델 사용
+        model = GROQ_VISION_MODEL
+        b64   = base64.b64encode(image_bytes).decode()
+        mime  = image_mime or "image/jpeg"
+        messages = [{"role": "user", "content": [
+            {"type": "text",      "text": system_prompt},
+            {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}
+        ]}]
+    else:
+        # 텍스트: 일반 모델 사용
+        model    = GROQ_TEXT_MODEL
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": f"추출 대상:\n{text}"}
+        ]
 
     payload = {
-        "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1000, "thinkingConfig": {"thinkingBudget": 0}}
+        "model":       model,
+        "messages":    messages,
+        "temperature": 0.1,
+        "max_tokens":  1000,
     }
-    # 선택된 모델부터 시도, 실패 시 fallback 순서대로 재시도
-    models_to_try = [GEMINI_MODEL] + [m for m in GEMINI_FALLBACKS if m != GEMINI_MODEL]
-    last_error = None
 
-    for model in models_to_try:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={GEMINI_API_KEY}"
-            async with httpx.AsyncClient() as c:
-                resp = await c.post(url, json=payload, timeout=30)
-                resp.raise_for_status()
-                data = resp.json()
+    try:
+        async with httpx.AsyncClient() as c:
+            resp = await c.post(
+                GROQ_API_URL,
+                json=payload,
+                headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+                timeout=30
+            )
+            resp.raise_for_status()
+            data = resp.json()
 
-            raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            raw = raw.replace("```json", "").replace("```", "").strip()
-            return json.loads(raw)
+        raw = data["choices"][0]["message"]["content"].strip()
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        return json.loads(raw)
 
-        except Exception as e:
-            # 400 에러 본문 출력 (정확한 원인 파악용)
-            try:
-                err_body = e.response.text if hasattr(e, 'response') else str(e)
-                print(f"[Gemini] {model} 실패: {e} | 본문: {err_body[:200]}")
-            except:
-                print(f"[Gemini] {model} 실패: {e}")
-            last_error = e
-            continue
-
-    raise last_error
+    except Exception as e:
+        err_body = e.response.text if hasattr(e, 'response') else str(e)
+        print(f"[Groq] {model} 실패: {e} | 본문: {err_body[:200]}")
+        raise
 
 
 # ─────────────────────────────────────────
@@ -227,8 +176,6 @@ async def check_reminders():
 # ─────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global GEMINI_MODEL
-    GEMINI_MODEL = await auto_select_gemini_model()
     scheduler.add_job(check_reminders, "interval", minutes=10, id="reminders")
     scheduler.start()
     yield
@@ -489,9 +436,13 @@ async def telegram_webhook(request: Request):
                 f_path   = f_resp.json()["result"]["file_path"]
                 img_resp = await c.get(f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{f_path}")
                 image_bytes = img_resp.content
-            parsed = await parse_with_gemini(image_bytes=image_bytes)
+            try:
+                parsed = await parse_with_groq(image_bytes=image_bytes)
+            except Exception:
+                await send_telegram("⚠️ 이미지 파싱에 실패했습니다.\n일정 내용을 텍스트로 다시 보내주세요.")
+                return {"ok": True}
         else:
-            parsed = await parse_with_gemini(text=text)
+            parsed = await parse_with_groq(text=text)
 
         if not parsed:
             await send_telegram("❌ 일정을 찾을 수 없었습니다.\n일정이 포함된 텍스트나 캡처 이미지를 보내주세요.")
