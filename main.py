@@ -13,6 +13,7 @@ from typing import Optional
 import os
 import json
 import base64
+import calendar as cal
 
 # ── 환경변수
 MONGO_URL          = os.environ.get("MONGO_URL")
@@ -112,11 +113,13 @@ datetime이 불명확하면 null로 설정하세요.
 scheduler = AsyncIOScheduler(timezone="Asia/Seoul")
 
 REMINDER_LABELS = {
-    "7d": "📅 7일 전", "5d": "📅 5일 전", "3d": "⏰ 3일 전",
-    "1d": "🔔 내일",   "3h": "🚨 3시간 전", "same_day": "🌅 오늘",
+    "3d": "⏰ 3일 전",
+    "1d": "🔔 내일",
+    "3h": "🚨 3시간 전",
 }
 
 async def check_reminders():
+    """10분마다 실행 — 3일 전 / 1일 전 / 3시간 전 알림"""
     try:
         kst = timezone(timedelta(hours=9))
         now = datetime.now(kst).replace(tzinfo=None)
@@ -135,11 +138,9 @@ async def check_reminders():
             notified = sched.get("notified", [])
 
             checks = [
-                ("7d", 7*24*60,   6.5*24*60),
-                ("5d", 5*24*60,   4.5*24*60),
-                ("3d", 3*24*60,   2.5*24*60),
-                ("1d", 1*24*60,   0.5*24*60),
-                ("3h", 3*60,       2.5*60),
+                ("3d", 3*24*60, 2.5*24*60),
+                ("1d", 1*24*60, 0.5*24*60),
+                ("3h", 3*60,    2.5*60),
             ]
             for key, upper, lower in checks:
                 if key not in notified and lower <= diff_min <= upper:
@@ -155,20 +156,100 @@ async def check_reminders():
                     await db.schedules.update_one(
                         {"_id": sched["_id"]}, {"$push": {"notified": key}})
 
-            # 당일 아침 9시 이후
-            if "same_day" not in notified and sched_dt.date() == now.date() and now.hour >= 9:
-                msg = (f"🌅 오늘 일정 알림\n\n"
-                       f"<b>{sched['title']}</b>\n"
-                       f"📅 오늘 {sched_dt.strftime('%H:%M')}")
-                markup = {"inline_keyboard": [[
-                    {"text": "✅ 완료 처리", "callback_data": f"done_{str(sched['_id'])}"}
-                ]]}
-                await send_telegram(msg, markup)
-                await db.schedules.update_one(
-                    {"_id": sched["_id"]}, {"$push": {"notified": "same_day"}})
-
     except Exception as e:
         print(f"[리마인더 오류] {e}")
+
+
+async def morning_briefing():
+    """매일 오전 9시 — 오늘 일정 + 진행 중 기간 일정 + 3일 후 일정 통합 브리핑"""
+    try:
+        kst   = timezone(timedelta(hours=9))
+        today = datetime.now(kst).date()
+        three_days_later = today + timedelta(days=3)
+
+        all_scheds = await db.schedules.find({"done": False}).to_list(300)
+
+        # 오늘 일정 (datetime 기준)
+        today_list = [s for s in all_scheds
+                      if s.get("datetime") and _safe_date(s["datetime"]) == today]
+
+        # 3일 후 일정
+        soon_list = [s for s in all_scheds
+                     if s.get("datetime") and _safe_date(s["datetime"]) == three_days_later]
+
+        # 진행 중 기간 일정 (start_date ~ end_date, 오늘 해당 요일 제외 아닌 것)
+        range_list = []
+        for s in all_scheds:
+            if not s.get("start_date") or not s.get("end_date"):
+                continue
+            try:
+                start_d = datetime.fromisoformat(s["start_date"]).date()
+                end_d   = datetime.fromisoformat(s["end_date"]).date()
+            except Exception:
+                continue
+            if not (start_d <= today <= end_d):
+                continue
+            if today.weekday() in s.get("exclude_weekdays", []):
+                continue
+            range_list.append(s)
+
+        if not today_list and not soon_list and not range_list:
+            await send_telegram(
+                f"🌅 <b>오늘 브리핑 ({today.strftime('%m월 %d일')})</b>\n\n✨ 오늘 예정된 일정이 없습니다.")
+            return
+
+        lines = [f"🌅 <b>오늘 브리핑 ({today.strftime('%m월 %d일')})</b>\n"]
+        inline_buttons = []
+
+        if today_list:
+            lines.append("📅 <b>오늘 일정</b>")
+            for s in today_list:
+                dt_label = ""
+                try:
+                    dt_label = f"  {datetime.fromisoformat(s['datetime']).strftime('%H:%M')}"
+                except Exception:
+                    pass
+                lines.append(f"• <b>{s['title']}</b>{dt_label}")
+                inline_buttons.append([{
+                    "text": f"✅ {s['title'][:20]}",
+                    "callback_data": f"done_{str(s['_id'])}"
+                }])
+
+        if range_list:
+            lines.append("\n🗓 <b>진행 중인 일정</b>")
+            for s in range_list:
+                try:
+                    start_d  = datetime.fromisoformat(s["start_date"]).date()
+                    end_d    = datetime.fromisoformat(s["end_date"]).date()
+                    day_idx  = (today - start_d).days + 1
+                    days_left = (end_d - today).days
+                    lines.append(f"• <b>{s['title']}</b>  {day_idx}일째 / {days_left}일 남음")
+                except Exception:
+                    lines.append(f"• <b>{s['title']}</b>")
+                inline_buttons.append([{
+                    "text": f"✅ {s['title'][:20]} 완료",
+                    "callback_data": f"done_{str(s['_id'])}"
+                }])
+
+        if soon_list:
+            lines.append(f"\n⏰ <b>3일 후 ({three_days_later.strftime('%m/%d')})</b>")
+            for s in soon_list:
+                dt_label = ""
+                try:
+                    dt_label = f"  {datetime.fromisoformat(s['datetime']).strftime('%H:%M')}"
+                except Exception:
+                    pass
+                lines.append(f"• <b>{s['title']}</b>{dt_label}")
+                inline_buttons.append([{
+                    "text": f"⏰ {s['title'][:20]}",
+                    "callback_data": f"done_{str(s['_id'])}"
+                }])
+
+        markup = {"inline_keyboard": inline_buttons} if inline_buttons else None
+        await send_telegram("\n".join(lines), markup)
+
+    except Exception as e:
+        print(f"[브리핑 오류] {e}")
 
 
 # ─────────────────────────────────────────
@@ -176,7 +257,8 @@ async def check_reminders():
 # ─────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    scheduler.add_job(check_reminders, "interval", minutes=10, id="reminders")
+    scheduler.add_job(check_reminders,   "interval", minutes=10,              id="reminders")
+    scheduler.add_job(morning_briefing,  "cron",     hour=9,    minute=0,     id="morning_briefing")
     scheduler.start()
     yield
     scheduler.shutdown()
@@ -207,6 +289,10 @@ class ScheduleCreate(BaseModel):
     title: str
     datetime: Optional[str] = None
     memo: Optional[str] = None
+    start_date: Optional[str] = None        # 기간 일정 시작일 YYYY-MM-DD
+    end_date: Optional[str] = None          # 기간 일정 종료일 YYYY-MM-DD
+    exclude_weekdays: Optional[list] = []   # 제외 요일 [0=월 ~ 6=일]
+    repeat: Optional[str] = None            # "weekly" | "monthly"
 
 def sched_to_dict(s: dict) -> dict:
     s["id"] = str(s.pop("_id"))
@@ -305,12 +391,16 @@ async def get_schedules():
 @app.post("/api/schedules")
 async def create_schedule(sched: ScheduleCreate):
     doc = {
-        "title":      sched.title,
-        "datetime":   sched.datetime,
-        "memo":       sched.memo or "",
-        "done":       False,
-        "notified":   [],
-        "created_at": datetime.utcnow().isoformat()
+        "title":            sched.title,
+        "datetime":         sched.datetime,
+        "memo":             sched.memo or "",
+        "start_date":       sched.start_date,
+        "end_date":         sched.end_date,
+        "exclude_weekdays": sched.exclude_weekdays or [],
+        "repeat":           sched.repeat,
+        "done":             False,
+        "notified":         [],
+        "created_at":       datetime.utcnow().isoformat()
     }
     result = await db.schedules.insert_one(doc)
     doc["id"] = str(result.inserted_id)
@@ -369,10 +459,41 @@ async def telegram_webhook(request: Request):
                 sched = await db.schedules.find_one({"_id": oid})
                 if sched:
                     await db.schedules.update_one({"_id": oid}, {"$set": {"done": True}})
+
+                    # 반복 일정: 다음 회차 자동 생성
+                    repeat   = sched.get("repeat")
+                    next_msg = ""
+                    if repeat and sched.get("datetime"):
+                        try:
+                            dt = datetime.fromisoformat(sched["datetime"])
+                            if repeat == "weekly":
+                                next_dt = dt + timedelta(weeks=1)
+                            elif repeat == "monthly":
+                                month = dt.month + 1 if dt.month < 12 else 1
+                                year  = dt.year  if dt.month < 12 else dt.year + 1
+                                max_d = cal.monthrange(year, month)[1]
+                                next_dt = dt.replace(year=year, month=month, day=min(dt.day, max_d))
+                            else:
+                                next_dt = None
+                            if next_dt:
+                                new_doc = {
+                                    "title":      sched["title"],
+                                    "datetime":   next_dt.isoformat()[:16],
+                                    "memo":       sched.get("memo", ""),
+                                    "repeat":     repeat,
+                                    "done":       False,
+                                    "notified":   [],
+                                    "created_at": datetime.utcnow().isoformat()
+                                }
+                                await db.schedules.insert_one(new_doc)
+                                next_msg = f"\n🔁 다음 회차 등록: {next_dt.strftime('%m월 %d일 %H:%M')}"
+                        except Exception as e:
+                            print(f"[반복 일정 오류] {e}")
+
                     async with httpx.AsyncClient() as c:
                         await c.post(f"{TELEGRAM_API}/answerCallbackQuery",
                                      json={"callback_query_id": cq_id, "text": "✅ 완료 처리됐습니다!"})
-                    await send_telegram(f"✅ <b>{sched['title']}</b> 완료 처리됐습니다.")
+                    await send_telegram(f"✅ <b>{sched['title']}</b> 완료 처리됐습니다.{next_msg}")
             except Exception as e:
                 print(f"[콜백 오류] {e}")
         return {"ok": True}

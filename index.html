@@ -738,6 +738,24 @@
     }
     .sched-date-group:first-child { margin-top: 0; }
 
+    .sched-past-divider {
+      display: flex; align-items: center; gap: .6rem;
+      margin: 1.5rem 0 .75rem;
+    }
+    .sched-past-divider span {
+      font-family: 'Pretendard', sans-serif; font-size: .75rem; font-weight: 700;
+      color: var(--muted); letter-spacing: .04em; white-space: nowrap;
+    }
+    .sched-past-divider::before, .sched-past-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+    .sched-card.past { opacity: .5; }
+    .sched-card.past .sched-title { color: var(--subtle); }
+    .sched-card.past .sched-date-badge {
+      background: rgba(255,255,255,.04); color: var(--muted);
+      border-color: var(--border);
+    }
+
   </style>
 </head>
 <body>
@@ -2108,6 +2126,8 @@ function renderSchedules() {
   const el = $('schedules-list');
   if (!el) return;
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+
   let filtered = schedules;
   if (schedFilter === 'upcoming') filtered = schedules.filter(s => !s.done);
   if (schedFilter === 'done')     filtered = schedules.filter(s => s.done);
@@ -2117,47 +2137,67 @@ function renderSchedules() {
     return;
   }
 
-  // 날짜별 그룹핑
-  const groups = {};
-  filtered.forEach(s => {
-    const key = s.datetime ? s.datetime.slice(0, 10) : 'none';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(s);
-  });
+  // upcoming 탭: 미완료를 지난 일정 / 예정 일정으로 분리
+  const isPast = s => !s.done && s.datetime && s.datetime.slice(0, 10) < todayStr;
 
-  const sortedKeys = Object.keys(groups).sort((a, b) => {
-    if (a === 'none') return 1;
-    if (b === 'none') return -1;
-    return a.localeCompare(b);
-  });
+  let upcoming = filtered, past = [];
+  if (schedFilter === 'upcoming') {
+    past     = filtered.filter(s => isPast(s));
+    upcoming = filtered.filter(s => !isPast(s));
+  }
 
-  let html = '';
-  sortedKeys.forEach(key => {
-    const label = key === 'none' ? '날짜 미정' : groupDateLabel(groups[key][0].datetime);
-    html += `<div class="sched-date-group">${escHtml(label)}</div>`;
-    groups[key].forEach(s => {
-      const dtLabel = fmtSchedDate(s.datetime);
-      html += `
-      <div class="sched-card ${s.done ? 'done' : ''} fade-up">
-        <button class="sched-check ${s.done ? 'checked' : ''}" onclick="toggleSchedDone('${s.id}')" title="${s.done ? '완료 취소' : '완료 처리'}">
-          ${s.done ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
-        </button>
-        <div class="sched-body">
-          <div class="sched-title">${escHtml(s.title)}</div>
-          <div class="sched-meta">
-            ${dtLabel ? `<span class="sched-date-badge">${escHtml(dtLabel)}</span>` : ''}
-            ${s.memo ? `<span class="sched-memo">📝 ${escHtml(s.memo)}</span>` : ''}
-          </div>
-        </div>
-        <button class="sched-del-btn" onclick="deleteSchedule('${s.id}')" title="삭제">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
-            <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-          </svg>
-        </button>
-      </div>`;
+  function buildGroup(list, pastClass = '') {
+    if (!list.length) return '';
+    const groups = {};
+    list.forEach(s => {
+      const key = s.datetime ? s.datetime.slice(0, 10) : 'none';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(s);
     });
-  });
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      if (a === 'none') return 1;
+      if (b === 'none') return -1;
+      return pastClass ? b.localeCompare(a) : a.localeCompare(b); // 지난 일정은 최신순
+    });
+    let html = '';
+    sortedKeys.forEach(key => {
+      const label = key === 'none' ? '날짜 미정' : groupDateLabel(groups[key][0].datetime);
+      html += `<div class="sched-date-group">${escHtml(label)}</div>`;
+      groups[key].forEach(s => {
+        const dtLabel = fmtSchedDate(s.datetime);
+        html += `
+        <div class="sched-card ${s.done ? 'done' : ''} ${pastClass} fade-up">
+          <button class="sched-check ${s.done ? 'checked' : ''}" onclick="toggleSchedDone('${s.id}')" title="${s.done ? '완료 취소' : '완료 처리'}">
+            ${s.done ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+          </button>
+          <div class="sched-body">
+            <div class="sched-title">${escHtml(s.title)}</div>
+            <div class="sched-meta">
+              ${dtLabel ? `<span class="sched-date-badge">${escHtml(dtLabel)}</span>` : ''}
+              ${s.memo ? `<span class="sched-memo">📝 ${escHtml(s.memo.length > 28 ? s.memo.slice(0, 28) + '…' : s.memo)}</span>` : ''}
+            </div>
+          </div>
+          <button class="sched-del-btn" onclick="deleteSchedule('${s.id}')" title="삭제">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/>
+              <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+          </button>
+        </div>`;
+      });
+    });
+    return html;
+  }
+
+  let html = buildGroup(upcoming);
+
+  if (past.length) {
+    html += `
+    <div class="sched-past-divider">
+      <span>⏰ 지난 일정 ${past.length}건</span>
+    </div>`;
+    html += buildGroup(past, 'past');
+  }
 
   el.innerHTML = html;
 }
