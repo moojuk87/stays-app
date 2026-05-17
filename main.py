@@ -81,7 +81,7 @@ datetime이 불명확하면 null로 설정하세요.
         "model":       model,
         "messages":    messages,
         "temperature": 0.1,
-        "max_tokens":  1000,
+        "max_tokens":  2000,
     }
 
     try:
@@ -100,12 +100,10 @@ datetime이 불명확하면 null로 설정하세요.
 
         try:
             result = json.loads(raw)
-            # 단일 객체로 왔을 경우 배열로 감싸기
             if isinstance(result, dict):
                 return [result]
             return result
         except json.JSONDecodeError:
-            # Groq이 줄바꿈으로 이어진 복수 JSON 객체를 반환한 경우 처리
             items = []
             for line in raw.splitlines():
                 line = line.strip()
@@ -117,9 +115,7 @@ datetime이 불명확하면 null로 설정하세요.
                         items.append(obj)
                 except json.JSONDecodeError:
                     continue
-            if items:
-                return items
-            return []
+            return items if items else []
 
     except Exception as e:
         err_body = e.response.text if hasattr(e, 'response') else str(e)
@@ -168,13 +164,29 @@ async def parse_edit_intent(text: str) -> dict:
 
     raw = data["choices"][0]["message"]["content"].strip()
     raw = raw.replace("```json", "").replace("```", "").strip()
-    return json.loads(raw)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        # 줄바꿈 복수 객체 대응 — 첫 번째 유효 객체만 반환
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                if isinstance(obj, dict):
+                    return obj
+            except json.JSONDecodeError:
+                continue
+        return {}
 
 
 def is_edit_intent(text: str) -> bool:
-    """수정/변경 의도 키워드 감지"""
-    keywords = ["바꿔", "변경", "수정", "고쳐", "옮겨", "미뤄", "앞당겨",
-                "바꿔줘", "변경해줘", "수정해줘", "고쳐줘", "옮겨줘"]
+    """수정/변경 의도 키워드 감지 — '수정하기' 같은 명사형은 제외"""
+    # 명확한 편집 지시 동사형만 인식 (단독 명사형 '수정', '변경' 제외)
+    keywords = ["바꿔줘", "변경해줘", "수정해줘", "고쳐줘", "옮겨줘",
+                "바꿔", "고쳐", "미뤄", "앞당겨",
+                "으로 바꿔", "으로 변경", "으로 수정", "날짜 바꿔", "시간 바꿔"]
     return any(kw in text for kw in keywords)
 
 
