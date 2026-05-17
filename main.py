@@ -97,7 +97,29 @@ datetime이 불명확하면 null로 설정하세요.
 
         raw = data["choices"][0]["message"]["content"].strip()
         raw = raw.replace("```json", "").replace("```", "").strip()
-        return json.loads(raw)
+
+        try:
+            result = json.loads(raw)
+            # 단일 객체로 왔을 경우 배열로 감싸기
+            if isinstance(result, dict):
+                return [result]
+            return result
+        except json.JSONDecodeError:
+            # Groq이 줄바꿈으로 이어진 복수 JSON 객체를 반환한 경우 처리
+            items = []
+            for line in raw.splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                    if isinstance(obj, dict):
+                        items.append(obj)
+                except json.JSONDecodeError:
+                    continue
+            if items:
+                return items
+            return []
 
     except Exception as e:
         err_body = e.response.text if hasattr(e, 'response') else str(e)
